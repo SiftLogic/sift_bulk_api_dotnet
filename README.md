@@ -1,5 +1,5 @@
-.Net FTP APIs
-=============
+.Net FTP API
+============
 
 This demonstrates how to connect to the ftp server with .Net using C#. You will need to know your apikey and password which can be found in the UI: API Keys -\> Manage -\> Actions -\> Access Details. Once you have that you can try the executable file for an upload demo. For example:
 <pre>
