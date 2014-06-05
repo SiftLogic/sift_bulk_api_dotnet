@@ -15,7 +15,7 @@ namespace CSharpFTPExample
     {
         // Required
         [Option('f', Required = true,
-          HelpText = "The file path of the upload file")]
+          HelpText = "The absolute file path of the upload file")]
         public string File { get; set; }
 
         [Option('l', Required = true,
@@ -85,12 +85,12 @@ namespace CSharpFTPExample
                     throw new Exception(result.Item2);
                 }
 
-                //var result = operations.Upload(opts.File);
-                //if (!result.Item1)
-                //{
-                //    throw new Exception(result.Item2);
-                //}
-                //Console.WriteLine(result.Item2);
+                result = operations.Upload(opts.File);
+                if (!result.Item1)
+                {
+                    throw new Exception(result.Item2);
+                }
+                Console.WriteLine(result.Item2);
 
                 //operations.Download(opts.Location, delegate(bool noError, string message)
                 //{

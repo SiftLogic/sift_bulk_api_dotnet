@@ -23,7 +23,10 @@ namespace CSharpFTPExample
 
         public string uploadFileName;
         public int pollEvery;
-        public IWebClient ftp;
+        public ISession ftp;
+        // There is no way to retrieve server responses from WinSCP when the requests succeeds. So s WebClient hack is used.
+        // See GetStatusDescription
+        public IWebClient ftpOther;
 
         /// <summary>
         /// The constructor adds properties to the object which are used in init.
@@ -43,22 +46,27 @@ namespace CSharpFTPExample
         }
 
         /// <summary>
-        /// Initializes the web client was initialized with the correct credentials.
+        /// Initializes the WinSCP client and WebClient with the correct credentials. Connects to the WinSCP Client.
         /// <param name="session">A WinSCP session, empty instantiation.</param>
         /// <value>A Tuble in the form (<init succeeded>, <message>)</value>
         /// </summary>
         public Tuple<bool, string> Init(ISession session)
         {
+            ftp = session;
+            ftpOther = new WrappedWebClient();
+
             try
             {
-                // Setup session options
-                SessionOptions sessionOptions = new SessionOptions();
-                sessionOptions.Protocol = Protocol.Ftp;
-                sessionOptions.HostName = host;
-                sessionOptions.UserName = username;
-                sessionOptions.Password = password;
+                ftpOther.Credentials = new NetworkCredential(username, password);
 
-                session.Open(sessionOptions);
+                // Setup session options
+                var options = new SessionOptions();
+                options.Protocol = Protocol.Ftp;
+                options.HostName = host;
+                options.UserName = username;
+                options.Password = password;
+
+                ftp.Open(options);
 
                 return new Tuple<bool, string>(true, "Initialization succeeded.");
             }
@@ -82,10 +90,9 @@ namespace CSharpFTPExample
             try
             {
                 var fileName = new FileInfo(file).Name;
-                Console.WriteLine(fileName);
-                ftp.UploadFile("ftp://" + host + ':' + port + directory + fileName, file);
+                ftpOther.UploadFile("ftp://" + host + ':' + port + directory + fileName, file);
 
-                var status = GetStatusDescription(ftp);
+                var status = GetStatusDescription(ftpOther);
                 if (status.Item1 == 226)
                 {
                     uploadFileName = status.Item2.Split(';').Last().Trim();
@@ -115,40 +122,40 @@ namespace CSharpFTPExample
         ///   message: Message returned, will never be empty.
         /// </param>
         /// </summary>
-        public virtual void Download(string location, Action<bool, string> callback)
-        {
-            var directory = "ftp://" + host + ':' + port + "/complete";
-            var formatted = GetDownloadFileName();
-            var result = GetDirectoryListing(directory);
+        //public virtual void Download(string location, Action<bool, string> callback)
+        //{
+        //    var directory = "ftp://" + host + ':' + port + "/complete";
+        //    var formatted = GetDownloadFileName();
+        //    var result = GetDirectoryListing(directory);
 
-            if (!result.Item1)
-            {
-                callback(false, result.Item2);
-            }
-            else if (result.Item2.IndexOf(formatted) > -1)
-            {
-                try
-                {
-                    ftp.DownloadFile(directory + "/" + formatted, location + "/" + formatted);
-                    callback(true, formatted + " downloaded to " + location);
-                }
-                catch (WebException exception)
-                {
-                    if (exception.Response != null)
-                    {
-                        callback(false, ((FtpWebResponse)exception.Response).StatusDescription);
-                    }
-                    callback(false,"The download location probably cannot be accessed. Full error message:" + exception.Message);
-                }
-            }
-            else
-            {
-                WaitAndDownload(formatted, new Timer(pollEvery * 1000), delegate()
-                {
-                    Download(location, callback);
-                });
-            }
-        }
+        //    if (!result.Item1)
+        //    {
+        //        callback(false, result.Item2);
+        //    }
+        //    else if (result.Item2.IndexOf(formatted) > -1)
+        //    {
+        //        try
+        //        {
+        //            ftp.DownloadFile(directory + "/" + formatted, location + "/" + formatted);
+        //            callback(true, formatted + " downloaded to " + location);
+        //        }
+        //        catch (WebException exception)
+        //        {
+        //            if (exception.Response != null)
+        //            {
+        //                callback(false, ((FtpWebResponse)exception.Response).StatusDescription);
+        //            }
+        //            callback(false,"The download location probably cannot be accessed. Full error message:" + exception.Message);
+        //        }
+        //    }
+        //    else
+        //    {
+        //        WaitAndDownload(formatted, new Timer(pollEvery * 1000), delegate()
+        //        {
+        //            Download(location, callback);
+        //        });
+        //    }
+        //}
 
         /// <summary>
         /// Waits the specified amount of time then calls Download again. Does not pause execution on the current thread.
@@ -156,14 +163,14 @@ namespace CSharpFTPExample
         /// <param name="timer">A timer instance with the interval time already set</param>
         /// <param name="callback">Called once the wait is over. No parameters.</param>
         /// </summary>
-        public virtual void WaitAndDownload(string file, Timer timer, Action callback)
-        {
-            Console.WriteLine("Waiting for results file " + file);
+        //public virtual void WaitAndDownload(string file, Timer timer, Action callback)
+        //{
+        //    Console.WriteLine("Waiting for results file " + file);
 
-            timer.Elapsed += (s_, e_) => callback();
-            timer.AutoReset = false;
-            timer.Start();
-        }
+        //    timer.Elapsed += (s_, e_) => callback();
+        //    timer.AutoReset = false;
+        //    timer.Start();
+        //}
 
         /// <summary>
         /// Instead of implementing multiple complex interfaces directly into the code base it is easier to just stub out this.
@@ -171,31 +178,31 @@ namespace CSharpFTPExample
         /// <param name="location">Full url of the location to list e.g. ftp://bacon:5894/complete </param>
         /// <value>>A Tuple in the form (<listing succeeded>, <message>)</value>
         /// </summary>
-        public virtual Tuple<bool, string> GetDirectoryListing(string location)
-        {
-            try
-            {
-                var request = (FtpWebRequest)WebRequest.Create(location);
-                request.Method = WebRequestMethods.Ftp.ListDirectoryDetails;
-                request.Credentials = ftp.Credentials;
+        //public virtual Tuple<bool, string> GetDirectoryListing(string location)
+        //{
+        //    try
+        //    {
+        //        var request = (FtpWebRequest)WebRequest.Create(location);
+        //        request.Method = WebRequestMethods.Ftp.ListDirectoryDetails;
+        //        request.Credentials = ftp.Credentials;
 
-                FtpWebResponse response = (FtpWebResponse)request.GetResponse();
+        //        FtpWebResponse response = (FtpWebResponse)request.GetResponse();
 
-                Stream responseStream = response.GetResponseStream();
-                StreamReader reader = new StreamReader(responseStream);
+        //        Stream responseStream = response.GetResponseStream();
+        //        StreamReader reader = new StreamReader(responseStream);
 
-                var listing = reader.ReadToEnd();
+        //        var listing = reader.ReadToEnd();
 
-                reader.Close();
-                response.Close();
+        //        reader.Close();
+        //        response.Close();
 
-                return new Tuple<bool, string>(true, listing);
-            }
-            catch (WebException exception)
-            {
-                return new Tuple<bool, string>(false, ((FtpWebResponse)exception.Response).StatusDescription);
-            }
-        }
+        //        return new Tuple<bool, string>(true, listing);
+        //    }
+        //    catch (WebException exception)
+        //    {
+        //        return new Tuple<bool, string>(false, ((FtpWebResponse)exception.Response).StatusDescription);
+        //    }
+        //}
 
         /// <summary>
         /// Returns

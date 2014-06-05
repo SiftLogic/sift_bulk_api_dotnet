@@ -85,7 +85,23 @@ namespace CSharpFTPExampleTests
             )));
 
             Assert.AreEqual(operations.Init(session), new Tuple<bool, string>(true, "Initialization succeeded."));
+            Assert.AreEqual(operations.ftp, session);
             mockSession.VerifyAll();
+        }
+
+        [TestMethod]
+        public void Init_Default_SetsUpWebClientNoConnect()
+        {
+            mockSession.Setup(m => m.Open(It.IsAny<SessionOptions>()));
+
+            operations.Init(session);
+
+            var credentials = operations.ftpOther.Credentials.GetCredential(null, "");
+            Assert.AreEqual(credentials.Password, password);
+            Assert.AreEqual(credentials.UserName, username);
+
+            mockSession.VerifyAll();
+            Assert.IsTrue(operations.ftpOther is WebClient);
         }
 
         [TestMethod]
@@ -100,87 +116,87 @@ namespace CSharpFTPExampleTests
 
         // Upload
 
-//        [TestMethod]
-//        public void Upload_BadStatusCode_SplitFileNameIsUploaded()
-//        {
-//            var ftpMessage = "500 The command was not accepted.";
-//            mockWebClient.Setup(m => m.UploadFile(null, null));
-//            mockOperations.Setup(m => m.GetStatusDescription(client)).Returns(new Tuple<int, string>(500, ftpMessage));
+        [TestMethod]
+        public void Upload_BadStatusCode_SplitFileNameIsUploaded()
+        {
+            var ftpMessage = "500 The command was not accepted.";
+            mockWebClient.Setup(m => m.UploadFile(null, null));
+            mockOperations.Setup(m => m.GetStatusDescription(client)).Returns(new Tuple<int, string>(500, ftpMessage));
 
-//            operations.Init();
-//            operations.ftp = client;
+            operations.Init(session);
+            operations.ftpOther = client;
 
-//            Assert.AreEqual(operations.Upload(file), new Tuple<bool, string>(false, "Failed to extract filename from: " + ftpMessage));
-//            Assert.AreEqual(operations.uploadFileName, null);
-//        }
+            Assert.AreEqual(operations.Upload(file), new Tuple<bool, string>(false, "Failed to extract filename from: " + ftpMessage));
+            Assert.AreEqual(operations.uploadFileName, null);
+        }
 
-//        [TestMethod]
-//        public void Upload_SplitFile_SplitFileNameIsUploaded()
-//        {
-//            var ftpMessage = "226 closing data connection; File upload success; source.csv";
-//            mockWebClient.Setup(m => m.UploadFile("ftp://bacon:9871/import_TestKey_splitfile_config/test.csv", file));
-//            mockOperations.Setup(m => m.GetStatusDescription(client)).Returns(new Tuple<int, string>(226, ftpMessage));
+        [TestMethod]
+        public void Upload_SplitFile_SplitFileNameIsUploaded()
+        {
+            var ftpMessage = "226 closing data connection; File upload success; source.csv";
+            mockWebClient.Setup(m => m.UploadFile("ftp://bacon:9871/import_TestKey_splitfile_config/test.csv", file));
+            mockOperations.Setup(m => m.GetStatusDescription(client)).Returns(new Tuple<int, string>(226, ftpMessage));
 
-//            operations.Init();
-//            operations.ftp = client;
+            operations.Init(session);
+            operations.ftpOther = client;
 
-//            Assert.AreEqual(operations.Upload(file), new Tuple<bool, string>(true, "test.csv has been uploaded as source.csv"));
+            Assert.AreEqual(operations.Upload(file), new Tuple<bool, string>(true, "test.csv has been uploaded as source.csv"));
 
-//            mockWebClient.VerifyAll();
-//            mockOperations.VerifyAll();
-//            Assert.AreEqual(operations.uploadFileName, "source.csv");
-//        }
+            mockWebClient.VerifyAll();
+            mockOperations.VerifyAll();
+            Assert.AreEqual(operations.uploadFileName, "source.csv");
+        }
 
-//        [TestMethod]
-//        public void Upload_SingleFile_SingleFileNameIsUploaded()
-//        {
-//            var ftpMessage = "226 closing data connection; File upload success; source.csv";
-//            mockWebClient.Setup(m => m.UploadFile("ftp://bacon:9871/import_TestKey_default_config/test.csv", file));
-//            mockOperations.Setup(m => m.GetStatusDescription(client)).Returns(new Tuple<int, string>(226, ftpMessage));
+        [TestMethod]
+        public void Upload_SingleFile_SingleFileNameIsUploaded()
+        {
+            var ftpMessage = "226 closing data connection; File upload success; source.csv";
+            mockWebClient.Setup(m => m.UploadFile("ftp://bacon:9871/import_TestKey_default_config/test.csv", file));
+            mockOperations.Setup(m => m.GetStatusDescription(client)).Returns(new Tuple<int, string>(226, ftpMessage));
 
-//            operations.Init();
-//            operations.ftp = client;
+            operations.Init(session);
+            operations.ftpOther = client;
 
-//            Assert.AreEqual(operations.Upload(file, true), new Tuple<bool, string>(true, "test.csv has been uploaded as source.csv"));
+            Assert.AreEqual(operations.Upload(file, true), new Tuple<bool, string>(true, "test.csv has been uploaded as source.csv"));
 
-//            mockWebClient.VerifyAll();
-//            mockOperations.VerifyAll();
-//            Assert.AreEqual(operations.uploadFileName, "source.csv");
-//        }
+            mockWebClient.VerifyAll();
+            mockOperations.VerifyAll();
+            Assert.AreEqual(operations.uploadFileName, "source.csv");
+        }
 
-//        // GetDownloadFileName
+        // GetDownloadFileName
 
-//        [TestMethod]
-//        public void GetDownloadFileName_NoModify_ReturnsSentIn()
-//        {
-//            var operations = new Operations(username, password);
+        [TestMethod]
+        public void GetDownloadFileName_NoModify_ReturnsSentIn()
+        {
+            var operations = new Operations(username, password);
 
-//            Assert.AreEqual(operations.GetDownloadFileName(), operations.uploadFileName);
+            Assert.AreEqual(operations.GetDownloadFileName(), operations.uploadFileName);
 
-//            operations.uploadFileName = "";
-//            Assert.AreEqual(operations.GetDownloadFileName(), "");
+            operations.uploadFileName = "";
+            Assert.AreEqual(operations.GetDownloadFileName(), "");
 
-//            operations.uploadFileName = "test_test.doc";
-//            Assert.AreEqual(operations.GetDownloadFileName(), "test_test.doc");
-//        }
+            operations.uploadFileName = "test_test.doc";
+            Assert.AreEqual(operations.GetDownloadFileName(), "test_test.doc");
+        }
 
-//        [TestMethod]
-//        public void GetDownloadFileName_Modify_ReturnsModified()
-//        {
-//            var operations = new Operations(username, password);
+        [TestMethod]
+        public void GetDownloadFileName_Modify_ReturnsModified()
+        {
+            var operations = new Operations(username, password);
 
-//            operations.uploadFileName = "source_test.doc";
-//            Assert.AreEqual(operations.GetDownloadFileName(), "archive_test.doc");
+            operations.uploadFileName = "source_test.doc";
+            Assert.AreEqual(operations.GetDownloadFileName(), "archive_test.doc");
 
-//            operations.uploadFileName = "source_source_test.csv.csv";
-//            Assert.AreEqual(operations.GetDownloadFileName(), "archive_source_test.csv.zip");
+            operations.uploadFileName = "source_source_test.csv.csv";
+            Assert.AreEqual(operations.GetDownloadFileName(), "archive_source_test.csv.zip");
 
-//            operations.uploadFileName = "source_source_test.txt.txt";
-//            Assert.AreEqual(operations.GetDownloadFileName(), "archive_source_test.txt.zip");
+            operations.uploadFileName = "source_source_test.txt.txt";
+            Assert.AreEqual(operations.GetDownloadFileName(), "archive_source_test.txt.zip");
 
-//            operations.uploadFileName = "source_source_test.csv.txt";
-//            Assert.AreEqual(operations.GetDownloadFileName(), "archive_source_test.csv.zip");
-//        }
+            operations.uploadFileName = "source_source_test.csv.txt";
+            Assert.AreEqual(operations.GetDownloadFileName(), "archive_source_test.csv.zip");
+        }
 
 //        // Download
 

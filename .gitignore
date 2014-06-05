@@ -1,7 +1,9 @@
 WinSCP.exe
 
 CSharpFTPExample/bin
+CSharpFTPExample/obj
 CSharpFTPExampleTests/bin
+CSharpFTPExampleTests/obj
 
 .idea
 todo.org

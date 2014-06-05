@@ -9,6 +9,8 @@ namespace CSharpFTPExample
     public interface ISession : IDisposable
     {
         void Open(SessionOptions sessionOptions);
+        TransferOperationResult PutFiles(string localPath, string remotePath);
+        StringCollection Output { get; }
     }
 
     /// <summary>

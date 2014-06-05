@@ -24,6 +24,19 @@ namespace CSharpFTPExample
         {
             session.Open(sessionOptions);
         }
+
+        public TransferOperationResult PutFiles(string localPath, string remotePath)
+        {
+            return session.PutFiles(localPath, remotePath);
+        }
+
+        public StringCollection Output
+        {
+            get
+            {
+                return session.Output;
+            }
+        }
     }
 
     /// <summary>
