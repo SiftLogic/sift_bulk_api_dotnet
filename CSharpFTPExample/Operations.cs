@@ -6,6 +6,7 @@ using System.IO;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Timers;
+using WinSCP;
 
 namespace CSharpFTPExample
 {
@@ -42,16 +43,29 @@ namespace CSharpFTPExample
         }
 
         /// <summary>
-        /// Initializes the web client was initialized with the correct credentials. Returns
-        /// <value>true if this succeeded.</value>
+        /// Initializes the web client was initialized with the correct credentials.
+        /// <param name="session">A WinSCP session, empty instantiation.</param>
+        /// <value>A Tuble in the form (<init succeeded>, <message>)</value>
         /// </summary>
-        public bool Init()
+        public Tuple<bool, string> Init(ISession session)
         {
-            this.ftp = new WrappedWebClient();
+            try
+            {
+                // Setup session options
+                SessionOptions sessionOptions = new SessionOptions();
+                sessionOptions.Protocol = Protocol.Ftp;
+                sessionOptions.HostName = host;
+                sessionOptions.UserName = username;
+                sessionOptions.Password = password;
 
-            ftp.Credentials = new NetworkCredential(username, password);
+                session.Open(sessionOptions);
 
-            return true;
+                return new Tuple<bool, string>(true, "Initialization succeeded.");
+            }
+            catch (Exception e)
+            {
+                return new Tuple<bool, string>(false, e.Message);
+            }
         }
 
         /// <summary>
