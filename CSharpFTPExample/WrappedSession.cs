@@ -13,7 +13,7 @@ namespace CSharpFTPExample
         public WrappedSession()
         {
             session = new Session();
-            session.ReconnectTime = new System.TimeSpan(10);
+            session.ExecutablePath = @"..\..\packages\WinSCP.5.5.3\content\WinSCP.exe";
         }
 
         public void Open(SessionOptions sessionOptions)
