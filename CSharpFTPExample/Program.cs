@@ -47,6 +47,10 @@ namespace CSharpFTPExample
           HelpText = "Whether to run in single file mode")]
         public bool SingleFile { get; set; }
 
+        [Option("remove", DefaultValue = false,
+          HelpText = "Remove the corresponding results file of the uploaded file")]
+        public bool Remove { get; set; }
+
         [HelpOption]
         public string GetUsage()
         {
@@ -92,7 +96,7 @@ namespace CSharpFTPExample
                 }
                 Console.WriteLine(result.Item2);
 
-                operations.Download(opts.Location, delegate(bool noError, string message)
+                operations.Download(opts.Location, opts.Remove, delegate(bool noError, string message)
                 {
                     if (!noError)
                     {

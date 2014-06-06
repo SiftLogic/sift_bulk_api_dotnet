@@ -211,7 +211,7 @@ namespace CSharpFTPExampleTests
             // Setup waiting
             this.resetEvent = new AutoResetEvent(false);
 
-            operations.Download("test.csv", delegate(bool noError, string message)
+            operations.Download("test.csv", false, delegate(bool noError, string message)
             {
                 Assert.IsFalse(noError);
                 Assert.AreEqual(message, "An Error");
@@ -234,7 +234,7 @@ namespace CSharpFTPExampleTests
             // Setup waiting
             this.resetEvent = new AutoResetEvent(false);
 
-            operations.Download("test.csv", delegate(bool noError, string message)
+            operations.Download("test.csv", false, delegate(bool noError, string message)
             {
                 Assert.IsFalse(noError);
                 Assert.AreEqual(message, "An Error");
@@ -256,17 +256,17 @@ namespace CSharpFTPExampleTests
             mockOperations.Setup(m => m.WaitAndDownload("test.csv", It.IsAny<System.Timers.Timer>(), It.IsAny<Action>()))
                             .Callback((string name, System.Timers.Timer timer, Action callback) =>
                             {
-                                mockOperations.Setup(m => m.Download("test.csv", It.IsAny<Action<bool, string>>()));
+                                mockOperations.Setup(m => m.Download("test.csv", true, It.IsAny<Action<bool, string>>()));
 
                                 Assert.AreEqual(name, "test.csv");
                                 Assert.AreEqual(timer.Interval, pollEvery * 1000);
 
                                 callback();
 
-                                mockOperations.Verify(m => m.Download("test.csv", It.IsAny<Action<bool, string>>()));
+                                mockOperations.Verify(m => m.Download("test.csv", true, It.IsAny<Action<bool, string>>()));
                             });
 
-            operations.Download("test.csv", delegate(bool noError, string message) { });
+            operations.Download("test.csv", true, delegate(bool noError, string message) { });
 
             mockOperations.VerifyAll();
         }
@@ -282,7 +282,7 @@ namespace CSharpFTPExampleTests
             // Setup waiting
             this.resetEvent = new AutoResetEvent(false);
 
-            operations.Download("\test", delegate(bool noError, string message)
+            operations.Download("\test", false, delegate(bool noError, string message)
             {
                 //Assert.IsTrue(noError);
                 Assert.AreEqual(message, "test.csv downloaded to \test");

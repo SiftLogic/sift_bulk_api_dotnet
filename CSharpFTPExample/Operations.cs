@@ -120,12 +120,13 @@ namespace CSharpFTPExample
         /// Polls every pollEvery seconds until the last uploaded file can be downloaded. Then downloads.
         /// Note: This must use FTPWebRequest (which is cumbersome), because WebClient does not support FTP listings.
         /// <param name="location">The absolute location of the file to upload.</param>
+        /// <param name="removeAfter"> If the results file should be removed after downloading.</param>
         /// <param name="callback">Called once the file downloads or there is an error. Called with:
         ///   noError: If an error occured.
         ///   message: Message returned, will never be empty.
         /// </param>
         /// </summary>
-        public virtual void Download(string location, Action<bool, string> callback)
+        public virtual void Download(string location, bool removeAfter, Action<bool, string> callback)
         {
             var formatted = GetDownloadFileName();
             var remoteFile = "/complete/" + formatted;
@@ -135,7 +136,7 @@ namespace CSharpFTPExample
                 var result = RemoteFileExists(remoteFile);
                 if (result.Item1 && String.IsNullOrEmpty(result.Item2))
                 {
-                    ftp.GetFiles(remoteFile, @location + "\\" + formatted);
+                    ftp.GetFiles(remoteFile, @location + "\\" + formatted, removeAfter);
 
                     ThrowErrorIfLocalFileNotPresent(@location + "\\" + formatted);
 
@@ -150,7 +151,7 @@ namespace CSharpFTPExample
                 {
                     WaitAndDownload(formatted, new Timer(pollEvery * 1000), delegate()
                     {
-                        Download(location, callback);
+                        Download(location, removeAfter, callback);
                     });
                 }
             }
