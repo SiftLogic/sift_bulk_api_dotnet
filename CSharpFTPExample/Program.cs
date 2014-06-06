@@ -85,7 +85,7 @@ namespace CSharpFTPExample
                     throw new Exception(result.Item2);
                 }
 
-                result = operations.Upload(opts.File);
+                result = operations.Upload(opts.File, opts.SingleFile);
                 if (!result.Item1)
                 {
                     throw new Exception(result.Item2);
