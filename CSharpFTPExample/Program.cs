@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using CommandLine;
 using CommandLine.Text;
+using WinSCP;
 
 namespace CSharpFTPExample
 {
@@ -14,7 +15,7 @@ namespace CSharpFTPExample
     {
         // Required
         [Option('f', Required = true,
-          HelpText = "The file path of the upload file")]
+          HelpText = "The absolute file path of the upload file")]
         public string File { get; set; }
 
         [Option('l', Required = true,
@@ -78,9 +79,13 @@ namespace CSharpFTPExample
             if (CommandLine.Parser.Default.ParseArguments(args, opts))
             {
                 Operations operations = new Operations(opts.Key, opts.Password, opts.Host, opts.Port, opts.Poll);
-                operations.Init();
+                var result = operations.Init(new WrappedSession());
+                if (!result.Item1)
+                {
+                    throw new Exception(result.Item2);
+                }
 
-                var result = operations.Upload(opts.File);
+                result = operations.Upload(opts.File);
                 if (!result.Item1)
                 {
                     throw new Exception(result.Item2);
@@ -93,13 +98,15 @@ namespace CSharpFTPExample
                     {
                         throw new Exception(message);
                     }
+                    
+                    
                     Console.WriteLine(message);
 
                     Console.WriteLine("Press Enter to close this program...");
                     Console.ReadLine();
                 });
 
-                Console.WriteLine("Downloading file, press Enter any time to quit before downloading...");
+                Console.WriteLine("downloading file, press enter any time to quit before downloading...");
                 Console.ReadLine();
             }
             else

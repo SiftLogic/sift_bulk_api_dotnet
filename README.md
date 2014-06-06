@@ -4,7 +4,7 @@
 This demonstrates how to connect to the ftp server with .Net using C#. You will need to know your apikey and password which can be found in the UI: API Keys -\> Manage -\> Actions -\> Access Details. Once you have that you can try the executable file for an upload demo. For example:
 <pre>
   <code>
-    CSharpFTPExample\bin\Release\CSharpFTPExample.exe -f test.csv -l C:\WINDOWS\Temp\ -u aUsername -p e261742d-fe2f-4569-95e6-312689d04903 --poll 10
+    CSharpFTPExample\bin\Release\CSharpFTPExample.exe -f C:\full\path\test.csv -l C:\WINDOWS\Temp\ -u aUsername -p e261742d-fe2f-4569-95e6-312689d04903 --poll 10
   </code>
 </pre>
 The CLI is described in more detail with <code>CSharpFTPExample\bin\Release\CSharpFTPExample.exe</code>
@@ -37,7 +37,6 @@ Building
 Make sure you are running C# \>= <b>5.0</b>.
 
 Using Visual Studio Express 2013 Edition, but newer or slightly older versions of Visual Studio should be able to load the solution file in \CSharpFTPExample fine. The build is already configured you just have to run it (F7). We are using NuGet (built into modern Visual Studios) for package management.
-
 
 Files And Folders
 =================

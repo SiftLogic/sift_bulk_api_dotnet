@@ -1,3 +1,11 @@
+WinSCP.exe
+
+CSharpFTPExample/packages
+CSharpFTPExample/bin
+CSharpFTPExample/obj
+CSharpFTPExampleTests/bin
+CSharpFTPExampleTests/obj
+
 .idea
 todo.org
 .emacs.desktop
@@ -14,6 +22,7 @@ nbproject/private/
 .fontconfig
 *.zip
 *.lock
+*.suo
 
 ##
 # Node.js gitignore from https://github.com/github/gitignore
