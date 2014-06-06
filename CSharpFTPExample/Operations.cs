@@ -21,6 +21,9 @@ namespace CSharpFTPExample
         private string host;
         private int port;
 
+        // Since the connection may need to be reopened later these will need to be stored.
+        private SessionOptions options;
+
         public string uploadFileName;
         public int pollEvery;
         public ISession ftp;
@@ -50,7 +53,7 @@ namespace CSharpFTPExample
         /// <param name="session">A WinSCP session, empty instantiation.</param>
         /// <value>A Tuble in the form (<init succeeded>, <message>)</value>
         /// </summary>
-        public Tuple<bool, string> Init(ISession session)
+        public virtual Tuple<bool, string> Init(ISession session)
         {
             ftp = session;
             ftpOther = new WrappedWebClient();
@@ -60,7 +63,7 @@ namespace CSharpFTPExample
                 ftpOther.Credentials = new NetworkCredential(username, password);
 
                 // Setup session options
-                var options = new SessionOptions();
+                options = new SessionOptions();
                 options.Protocol = Protocol.Ftp;
                 options.HostName = host;
                 options.UserName = username;
@@ -78,7 +81,7 @@ namespace CSharpFTPExample
 
         /// <summary>
         /// Uploads the specified file.
-        /// <param name="filename">The location of the file to upload.</param>
+        /// <param name="filename">The absolute location of the file to upload.</param>
         /// <param name="singleFile">If the file is uploaded in single file mode. Defaults to false.</param>
         /// <value>A Tuble in the form (<upload succeeded>, <message>)</value>
         /// </summary>
@@ -116,46 +119,111 @@ namespace CSharpFTPExample
         /// <summary>
         /// Polls every pollEvery seconds until the last uploaded file can be downloaded. Then downloads.
         /// Note: This must use FTPWebRequest (which is cumbersome), because WebClient does not support FTP listings.
-        /// <param name="location">The location of the file to upload.</param>
+        /// <param name="location">The absolute location of the file to upload.</param>
         /// <param name="callback">Called once the file downloads or there is an error. Called with:
         ///   noError: If an error occured.
         ///   message: Message returned, will never be empty.
         /// </param>
         /// </summary>
-        //public virtual void Download(string location, Action<bool, string> callback)
-        //{
-        //    var directory = "ftp://" + host + ':' + port + "/complete";
-        //    var formatted = GetDownloadFileName();
-        //    var result = GetDirectoryListing(directory);
+        public virtual void Download(string location, Action<bool, string> callback)
+        {
+            var formatted = GetDownloadFileName();
+            var remoteFile = "/complete/" + formatted;
 
-        //    if (!result.Item1)
-        //    {
-        //        callback(false, result.Item2);
-        //    }
-        //    else if (result.Item2.IndexOf(formatted) > -1)
-        //    {
-        //        try
-        //        {
-        //            ftp.DownloadFile(directory + "/" + formatted, location + "/" + formatted);
-        //            callback(true, formatted + " downloaded to " + location);
-        //        }
-        //        catch (WebException exception)
-        //        {
-        //            if (exception.Response != null)
-        //            {
-        //                callback(false, ((FtpWebResponse)exception.Response).StatusDescription);
-        //            }
-        //            callback(false,"The download location probably cannot be accessed. Full error message:" + exception.Message);
-        //        }
-        //    }
-        //    else
-        //    {
-        //        WaitAndDownload(formatted, new Timer(pollEvery * 1000), delegate()
-        //        {
-        //            Download(location, callback);
-        //        });
-        //    }
-        //}
+            try
+            {
+                var result = RemoteFileExists(remoteFile);
+                if (result.Item1 && String.IsNullOrEmpty(result.Item2))
+                {
+                    ftp.GetFiles(remoteFile, @location + "\\" + formatted);
+
+                    ThrowErrorIfLocalFileNotPresent(@location + "\\" + formatted);
+
+                    callback(true, formatted + " downloaded to " + location);
+                }
+                // Result error
+                else if (!String.IsNullOrEmpty(result.Item2))
+                {
+                    callback(false, result.Item2);
+                }
+                else
+                {
+                    WaitAndDownload(formatted, new Timer(pollEvery * 1000), delegate()
+                    {
+                        Download(location, callback);
+                    });
+                }
+            }
+            catch (Exception e)
+            {
+                callback(false, e.Message);
+            }
+        }
+
+        /// <summary>
+        /// Throws an error if the file could not be found on the file system. Not tested, it is used to isolate File's static
+        /// methods.
+        /// <param name="file">Full path of the file e.g. /complete/test.csv </param>
+        /// </summary>
+        public virtual void ThrowErrorIfLocalFileNotPresent(string file)
+        {
+            if (!File.Exists(file))
+            {
+                throw new Exception(file + " could not be saved.");
+            }
+        }
+
+        /// <summary>
+        /// Checks if the sent in file exists. The WinSCP version does not work.
+        /// <param name="file">Full path of the file e.g. /complete/test.csv </param>
+        /// <value>A Tuble in the form (<file found>, <message (only if an error)>)</value>
+        /// </summary>
+        public virtual Tuple<bool, string> RemoteFileExists(string file)
+        {
+            if (!String.IsNullOrEmpty(file))
+            {
+                var parts = file.Split('/');
+                var filename = parts.Last();
+                var location = String.Join("/", parts, 0, parts.Length - 1);
+
+                // Connection could have dropped
+                ftp.Dispose();
+                var result = Init(new WrappedSession());
+                if (!result.Item1)
+                {
+                    return new Tuple<bool, string>(false, result.Item2);
+                }
+
+                return new Tuple<bool, string>(InDirectoryListing(location, filename), null);
+            }
+
+            return new Tuple<bool, string>(false, null);
+        }
+
+        /// <summary>
+        /// Mocking the return of ListDirectory is impossible, literally. So it is best to isolate the untested code.
+        /// public sealed class RemoteDirectoryInfo
+        /// "You can only get an instance of the class by calling Session.ListDirectory." -WinSCP
+        /// <param name="location">Location of the server to check e.g. /complete</param>
+        /// <param name="filename">Just the filename e.g. test.csv</param>
+        /// <param name="callback">Called once the wait is over. No parameters.</param>
+        /// </summary>
+        public virtual bool InDirectoryListing(string location, string filename)
+        {
+            RemoteDirectoryInfo directory = ftp.ListDirectory(location);
+            if (directory != null)
+            {
+                foreach (RemoteFileInfo fileInfo in directory.Files)
+                {
+                    if (fileInfo.Name == filename)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
 
         /// <summary>
         /// Waits the specified amount of time then calls Download again. Does not pause execution on the current thread.
@@ -163,46 +231,14 @@ namespace CSharpFTPExample
         /// <param name="timer">A timer instance with the interval time already set</param>
         /// <param name="callback">Called once the wait is over. No parameters.</param>
         /// </summary>
-        //public virtual void WaitAndDownload(string file, Timer timer, Action callback)
-        //{
-        //    Console.WriteLine("Waiting for results file " + file);
+        public virtual void WaitAndDownload(string file, Timer timer, Action callback)
+        {
+            Console.WriteLine("Waiting for results file " + file);
 
-        //    timer.Elapsed += (s_, e_) => callback();
-        //    timer.AutoReset = false;
-        //    timer.Start();
-        //}
-
-        /// <summary>
-        /// Instead of implementing multiple complex interfaces directly into the code base it is easier to just stub out this.
-        /// Unfortunately, then this code must remain untested.
-        /// <param name="location">Full url of the location to list e.g. ftp://bacon:5894/complete </param>
-        /// <value>>A Tuple in the form (<listing succeeded>, <message>)</value>
-        /// </summary>
-        //public virtual Tuple<bool, string> GetDirectoryListing(string location)
-        //{
-        //    try
-        //    {
-        //        var request = (FtpWebRequest)WebRequest.Create(location);
-        //        request.Method = WebRequestMethods.Ftp.ListDirectoryDetails;
-        //        request.Credentials = ftp.Credentials;
-
-        //        FtpWebResponse response = (FtpWebResponse)request.GetResponse();
-
-        //        Stream responseStream = response.GetResponseStream();
-        //        StreamReader reader = new StreamReader(responseStream);
-
-        //        var listing = reader.ReadToEnd();
-
-        //        reader.Close();
-        //        response.Close();
-
-        //        return new Tuple<bool, string>(true, listing);
-        //    }
-        //    catch (WebException exception)
-        //    {
-        //        return new Tuple<bool, string>(false, ((FtpWebResponse)exception.Response).StatusDescription);
-        //    }
-        //}
+            timer.Elapsed += (s_, e_) => callback();
+            timer.AutoReset = false;
+            timer.Start();
+        }
 
         /// <summary>
         /// Returns

@@ -10,7 +10,8 @@ namespace CSharpFTPExample
     {
         void Open(SessionOptions sessionOptions);
         TransferOperationResult PutFiles(string localPath, string remotePath);
-        StringCollection Output { get; }
+        TransferOperationResult GetFiles(string remotePath, string localPath, bool remove = false);
+        RemoteDirectoryInfo ListDirectory(string path);
     }
 
     /// <summary>

@@ -38,7 +38,6 @@ Make sure you are running C# \>= <b>5.0</b>.
 
 Using Visual Studio Express 2013 Edition, but newer or slightly older versions of Visual Studio should be able to load the solution file in \CSharpFTPExample fine. The build is already configured you just have to run it (F7). We are using NuGet (built into modern Visual Studios) for package management.
 
-
 Files And Folders
 =================
 

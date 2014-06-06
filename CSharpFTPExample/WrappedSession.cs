@@ -13,11 +13,7 @@ namespace CSharpFTPExample
         public WrappedSession()
         {
             session = new Session();
-        }
-
-        public void Dispose()
-        {
-            session.Dispose();
+            session.ReconnectTime = new System.TimeSpan(10);
         }
 
         public void Open(SessionOptions sessionOptions)
@@ -30,12 +26,19 @@ namespace CSharpFTPExample
             return session.PutFiles(localPath, remotePath);
         }
 
-        public StringCollection Output
+        public TransferOperationResult GetFiles(string remotePath, string localPath, bool remove = false)
         {
-            get
-            {
-                return session.Output;
-            }
+            return session.GetFiles(remotePath, localPath, remove);
+        }
+
+        public RemoteDirectoryInfo ListDirectory(string path)
+        {
+            return session.ListDirectory(path);
+        }
+
+        public void Dispose()
+        {
+            session.Dispose();
         }
     }
 

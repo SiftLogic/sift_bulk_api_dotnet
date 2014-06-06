@@ -37,6 +37,7 @@ namespace CSharpFTPExampleTests
         public void Setup()
         {
             mockOperations = new Mock<Operations>(username, password, host, port, pollEvery);
+            mockOperations.CallBase = true;
             operations = mockOperations.Object;
 
             mockWebClient = new Mock<IWebClient>();
@@ -44,6 +45,7 @@ namespace CSharpFTPExampleTests
 
             mockSession = new Mock<ISession>();
             session = mockSession.Object;
+            operations.Init(session);
 
             directory = "ftp://" + host + ':' + port + "/complete";
         }
@@ -198,122 +200,183 @@ namespace CSharpFTPExampleTests
             Assert.AreEqual(operations.GetDownloadFileName(), "archive_source_test.csv.zip");
         }
 
-//        // Download
+        // Download
 
-//        [TestMethod]
-//        public void Download_ListingErrors_DownloadListError()
-//        {
-//            mockOperations.Setup(m => m.GetDownloadFileName()).Returns("test.csv");
-//            mockOperations.Setup(m => m.GetDirectoryListing(directory)).Returns(new Tuple<bool, string>(false, "error"));
-//            mockOperations.CallBase = true;
- 
-//            // Setup waiting
-//            this.resetEvent = new AutoResetEvent(false);
+        [TestMethod]
+        public void Download_Default_AnErrorReturnsFalse()
+        {
+            mockOperations.Setup(m => m.GetDownloadFileName()).Returns("test.csv");
+            mockOperations.Setup(m => m.RemoteFileExists("/complete/test.csv")).Throws(new Exception("An Error"));
 
-//            operations.Download("test.csv", delegate(bool noError, string message)
-//            {
-//                Assert.IsFalse(noError);
-//                Assert.AreEqual(message, "error");
+            // Setup waiting
+            this.resetEvent = new AutoResetEvent(false);
 
-//                // Stop waiting
-//                this.resetEvent.Set();
-//            });
+            operations.Download("test.csv", delegate(bool noError, string message)
+            {
+                Assert.IsFalse(noError);
+                Assert.AreEqual(message, "An Error");
 
-//            // Do not pass this statement until the waiting is done
-//            Assert.IsTrue(this.resetEvent.WaitOne());
-//            mockOperations.VerifyAll();
-//        }
+                // Stop waiting
+                this.resetEvent.Set();
+            });
 
-//        [TestMethod]
-//        public void Download_ListingDoesNotContainFile_CallsWaitForDownload()
-//        {
-//            mockOperations.Setup(m => m.GetDownloadFileName()).Returns("test.csv");
-//            mockOperations.Setup(m => m.GetDirectoryListing(directory)).Returns(new Tuple<bool, string>(true, "not here"));
-//            mockOperations.Setup(m => m.WaitAndDownload("test.csv", It.IsAny<System.Timers.Timer>(), It.IsAny<Action>()))
-//                          .Callback((string name, System.Timers.Timer timer, Action callback) =>
-//                          {
-//                              mockOperations.Setup(m => m.Download("test.csv", It.IsAny<Action<bool, string>>()));
+            // Do not pass this statement until the waiting is done
+            Assert.IsTrue(this.resetEvent.WaitOne());
+            mockOperations.VerifyAll();
+        }
 
-//                              Assert.AreEqual(name, "test.csv");
-//                              Assert.AreEqual(timer.Interval, pollEvery * 1000);
+        [TestMethod]
+        public void Download_Default_FileExistsErrorReturnsFalse()
+        {
+            mockOperations.Setup(m => m.GetDownloadFileName()).Returns("test.csv");
+            mockOperations.Setup(m => m.RemoteFileExists("/complete/test.csv")).Returns(new Tuple<bool, string>(false, "An Error"));
 
-//                              callback();
+            // Setup waiting
+            this.resetEvent = new AutoResetEvent(false);
 
-//                              mockOperations.Verify(m => m.Download("test.csv", It.IsAny<Action<bool, string>>()));
-//                          });
-//            mockOperations.CallBase = true;
+            operations.Download("test.csv", delegate(bool noError, string message)
+            {
+                Assert.IsFalse(noError);
+                Assert.AreEqual(message, "An Error");
 
-//            operations.Download("test.csv", delegate(bool noError, string message) { });
+                // Stop waiting
+                this.resetEvent.Set();
+            });
 
-//            mockOperations.VerifyAll();
-//        }
+            // Do not pass this statement until the waiting is done
+            Assert.IsTrue(this.resetEvent.WaitOne());
+            mockOperations.VerifyAll();
+        }
 
-//        [TestMethod]
-//        public void Download_ListingDoesContainFile_DownloadsFile()
-//        {
-//            var location = @"C:\WINDOWS\";
-//            var fileName = "test.csv";
-//            var listing = @"
-//                 -rw-r---- 1000 test1.csv\n
-//                 -rw-r---- 1000 test.csv\n
-//                 -rw-r---- 1000 test2.csv\n
-//                 -rw-r---- 1000 test3.csv\n
-//            ";
+        [TestMethod]
+        public void Download_Default_FileNotFound()
+        {
+            mockOperations.Setup(m => m.GetDownloadFileName()).Returns("test.csv");
+            mockOperations.Setup(m => m.RemoteFileExists("/complete/test.csv")).Returns(new Tuple<bool, string>(false, null));
+            mockOperations.Setup(m => m.WaitAndDownload("test.csv", It.IsAny<System.Timers.Timer>(), It.IsAny<Action>()))
+                            .Callback((string name, System.Timers.Timer timer, Action callback) =>
+                            {
+                                mockOperations.Setup(m => m.Download("test.csv", It.IsAny<Action<bool, string>>()));
 
-//            mockOperations.Setup(m => m.GetDownloadFileName()).Returns(fileName);
-//            mockOperations.Setup(m => m.GetDirectoryListing(directory)).Returns(new Tuple<bool, string>(true, listing));
-//            mockOperations.CallBase = true;
+                                Assert.AreEqual(name, "test.csv");
+                                Assert.AreEqual(timer.Interval, pollEvery * 1000);
 
-//            this.resetEvent = new AutoResetEvent(false);
+                                callback();
 
-//            mockWebClient.Setup(m => m.DownloadFile(directory + "/" + fileName, location + "/" + fileName));
-//            operations.Init();
-//            operations.ftp = client;
+                                mockOperations.Verify(m => m.Download("test.csv", It.IsAny<Action<bool, string>>()));
+                            });
 
-//            operations.Download(@"C:\WINDOWS\", delegate(bool noError, string message)
-//            {
-//                Assert.IsTrue(noError);
-//                Assert.AreEqual(message, fileName + @" downloaded to C:\WINDOWS\");
+            operations.Download("test.csv", delegate(bool noError, string message) { });
 
-//                this.resetEvent.Set();
-//            });
+            mockOperations.VerifyAll();
+        }
 
-//            Assert.IsTrue(this.resetEvent.WaitOne());
-//            mockOperations.VerifyAll();
-//        }
+        [TestMethod]
+        public void Download_Default_FileFoundAndDownloads()
+        {
+            mockOperations.Setup(m => m.GetDownloadFileName()).Returns("test.csv");
+            mockOperations.Setup(m => m.RemoteFileExists("/complete/test.csv")).Returns(new Tuple<bool, string>(true, null));
+            mockOperations.Setup(m => m.ThrowErrorIfLocalFileNotPresent("\test\\test.csv"));
+            mockSession.Setup(m => m.GetFiles("/complete/test.csv", "\test\\test.csv", false));
 
-//        // WaitsForDownload
+            // Setup waiting
+            this.resetEvent = new AutoResetEvent(false);
 
-//        [TestMethod]
-//        public void WaitsForDownload_Default_PrintsSleepsAndCreatesTimer()
-//        {
-//            var time = 2;
-//            Mock<System.Timers.Timer> mockTimer = new Mock<System.Timers.Timer>(time * 1000);
+            operations.Download("\test", delegate(bool noError, string message)
+            {
+                //Assert.IsTrue(noError);
+                Assert.AreEqual(message, "test.csv downloaded to \test");
 
-//            using (StringWriter sw = new StringWriter())
-//            {
-//                Console.SetOut(sw);
+                // Stop waiting
+                this.resetEvent.Set();
+            });
 
-//                var callCount = 0;
-//                mockOperations.CallBase = true;
-//                operations.WaitAndDownload("test.csv", mockTimer.Object, delegate()
-//                {
-//                    callCount += 1;
-//                });
+            // Do not pass this statement until the waiting is done
+            Assert.IsTrue(this.resetEvent.WaitOne());
 
-//                Assert.AreEqual("Waiting for results file test.csv", sw.ToString().Trim());
-//            }
+            mockOperations.VerifyAll();
+        }
 
-//            // Unfortunately, short of defining a new timer interface for the main code base, this is the most I can test.
-//            mockTimer.Object.Stop();
-//            Assert.AreEqual(mockTimer.Object.AutoReset, false);
-//            mockTimer.VerifyAll();
+        // RemoteFileExists
 
-//            // Restore the Console
-//            StreamWriter standardOut = new StreamWriter(Console.OpenStandardOutput());
-//            standardOut.AutoFlush = true;
-//            Console.SetOut(standardOut);
-//        }
+        [TestMethod]
+        public void RemoteFileExists_EmptyFile_ReturnsFalse()
+        {
+            Assert.AreEqual(operations.RemoteFileExists(""), new Tuple<bool, string>(false, null));
+        }
+
+        [TestMethod]
+        public void RemoteFileExists_InitError_ReturnsFalseAndError()
+        {
+            mockSession.Setup(m => m.Dispose());
+            mockOperations.Setup(m => m.Init(It.IsAny<ISession>())).Returns(new Tuple<bool, string>(false, "An Error"));
+
+            Assert.AreEqual(operations.RemoteFileExists("test/test.csv"), new Tuple<bool, string>(false, "An Error"));
+
+            mockSession.VerifyAll();
+            mockOperations.VerifyAll();
+        }
+
+        [TestMethod]
+        public void FileExists_FileNotFound_ReturnsFalse()
+        {
+            mockSession.Setup(m => m.Dispose());
+            mockOperations.Setup(m => m.Init(It.IsAny<ISession>())).Returns(new Tuple<bool, string>(true, null));
+            mockOperations.Setup(m => m.InDirectoryListing("/test", "test.csv")).Returns(false);
+            operations.Init(session);
+
+            Assert.AreEqual(operations.RemoteFileExists("/test/test.csv"), new Tuple<bool, string>(false, null));
+
+            mockSession.VerifyAll();
+            mockOperations.VerifyAll();
+        }
+
+        [TestMethod]
+        public void FileExists_FileFound_ReturnTrue()
+        {
+            mockSession.Setup(m => m.Dispose());
+            mockOperations.Setup(m => m.Init(It.IsAny<ISession>())).Returns(new Tuple<bool, string>(true, null));
+            mockOperations.Setup(m => m.InDirectoryListing("/test", "test.csv")).Returns(true);
+            operations.Init(session);
+
+            Assert.AreEqual(operations.RemoteFileExists("/test/test.csv"), new Tuple<bool, string>(true, null));
+
+            mockSession.VerifyAll();
+            mockOperations.VerifyAll();
+        }
+
+        // WaitsForDownload
+
+        [TestMethod]
+        public void WaitsForDownload_Default_PrintsSleepsAndCreatesTimer()
+        {
+            var time = 2;
+            Mock<System.Timers.Timer> mockTimer = new Mock<System.Timers.Timer>(time * 1000);
+
+            using (StringWriter sw = new StringWriter())
+            {
+                Console.SetOut(sw);
+
+                var callCount = 0;
+                mockOperations.CallBase = true;
+                operations.WaitAndDownload("test.csv", mockTimer.Object, delegate()
+                {
+                    callCount += 1;
+                });
+
+                Assert.AreEqual("Waiting for results file test.csv", sw.ToString().Trim());
+            }
+
+            // Unfortunately, short of defining a new timer interface for the main code base, this is the most I can test.
+            mockTimer.Object.Stop();
+            Assert.AreEqual(mockTimer.Object.AutoReset, false);
+            mockTimer.VerifyAll();
+
+            // Restore the Console
+            StreamWriter standardOut = new StreamWriter(Console.OpenStandardOutput());
+            standardOut.AutoFlush = true;
+            Console.SetOut(standardOut);
+        }
 
     }
 }
