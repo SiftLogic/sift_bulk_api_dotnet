@@ -11,6 +11,7 @@ namespace CSharpFTPExample
         void Open(SessionOptions sessionOptions);
         TransferOperationResult PutFiles(string localPath, string remotePath);
         TransferOperationResult GetFiles(string remotePath, string localPath, bool remove = false);
+        RemovalOperationResult RemoveFiles(string path);
         RemoteDirectoryInfo ListDirectory(string path);
     }
 

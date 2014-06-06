@@ -378,6 +378,25 @@ namespace CSharpFTPExampleTests
             Console.SetOut(standardOut);
         }
 
+        // Remove
+
+        [TestMethod]
+        public void Remove_Default_WithErrorReturnsFalse()
+        {
+            mockOperations.Setup(m => m.GetDownloadFileName()).Returns("test.zip");
+            mockSession.Setup(m => m.RemoveFiles("/complete/test.zip")).Throws(new Exception("An Error"));
+
+            Assert.AreEqual(operations.Remove(), new Tuple<bool, string>(false, "An Error"));
+        }
+
+        [TestMethod]
+        public void Remove_Default_DeletedReturnsTrue()
+        {
+            mockOperations.Setup(m => m.GetDownloadFileName()).Returns("test.zip");
+            mockSession.Setup(m => m.RemoveFiles("/complete/test.zip"));
+
+            Assert.AreEqual(operations.Remove(), new Tuple<bool, string>(true, null));
+        }
     }
 }
 

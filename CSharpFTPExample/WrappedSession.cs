@@ -31,6 +31,11 @@ namespace CSharpFTPExample
             return session.GetFiles(remotePath, localPath, remove);
         }
 
+        public RemovalOperationResult RemoveFiles(string path)
+        {
+            return session.RemoveFiles(path);
+        }
+
         public RemoteDirectoryInfo ListDirectory(string path)
         {
             return session.ListDirectory(path);

@@ -51,7 +51,7 @@ namespace CSharpFTPExample
         /// <summary>
         /// Initializes the WinSCP client and WebClient with the correct credentials. Connects to the WinSCP Client.
         /// <param name="session">A WinSCP session, empty instantiation.</param>
-        /// <value>A Tuble in the form (<init succeeded>, <message>)</value>
+        /// <value>A Tuple in the form (<init succeeded>, <message>)</value>
         /// </summary>
         public virtual Tuple<bool, string> Init(ISession session)
         {
@@ -83,7 +83,7 @@ namespace CSharpFTPExample
         /// Uploads the specified file.
         /// <param name="filename">The absolute location of the file to upload.</param>
         /// <param name="singleFile">If the file is uploaded in single file mode. Defaults to false.</param>
-        /// <value>A Tuble in the form (<upload succeeded>, <message>)</value>
+        /// <value>A Tuple in the form (<upload succeeded>, <message>)</value>
         /// </summary>
         public Tuple<bool, string> Upload(string file, bool singleFile = false)
         {
@@ -177,7 +177,7 @@ namespace CSharpFTPExample
         /// <summary>
         /// Checks if the sent in file exists. The WinSCP version does not work.
         /// <param name="file">Full path of the file e.g. /complete/test.csv </param>
-        /// <value>A Tuble in the form (<file found>, <message (only if an error)>)</value>
+        /// <value>A Tuple in the form (<file found>, <message (only if an error)>)</value>
         /// </summary>
         public virtual Tuple<bool, string> RemoteFileExists(string file)
         {
@@ -239,6 +239,29 @@ namespace CSharpFTPExample
             timer.Elapsed += (s_, e_) => callback();
             timer.AutoReset = false;
             timer.Start();
+        }
+
+        /// <summary>
+        /// Removes the results file from the server.
+        /// <value>A Tuple in the form (<remove succeeded>, <error message>)</value>
+        /// </summary>
+        public virtual Tuple<bool, string> Remove()
+        {
+            try
+            {
+                var result = ftp.RemoveFiles("/complete/" + GetDownloadFileName());
+
+                if (result != null)
+                {
+                    result.Check();
+                }
+
+                return new Tuple<bool, string>(true, null);
+            }
+            catch (Exception e)
+            {
+                return new Tuple<bool, string>(false, e.Message);
+            }
         }
 
         /// <summary>
