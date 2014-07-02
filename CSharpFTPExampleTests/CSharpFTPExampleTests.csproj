@@ -59,6 +59,7 @@
   <ItemGroup>
     <Compile Include="OperationsTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="FtpOperationsTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
