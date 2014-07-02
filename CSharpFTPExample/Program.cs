@@ -22,7 +22,7 @@ namespace CSharpFTPExample
           HelpText = "The absolute location of where the results file should be placed")]
         public string Location { get; set; }
 
-        [Option('u', Required = true,
+        [Option('u', DefaultValue = null,
           HelpText = "The username defined in the manage api keys section")]
         public string Key { get; set; }
 
@@ -51,12 +51,20 @@ namespace CSharpFTPExample
           HelpText = "Remove the corresponding results file of the uploaded file")]
         public bool Remove { get; set; }
 
+        [Option("protocol", DefaultValue = "http",
+          HelpText = "Which type of protocol to use")]
+        public string Protocol { get; set; }
+
+        [Option("notify", DefaultValue = null,
+          HelpText = "The full email address to notify")]
+        public string Notify { get; set; }
+
         [HelpOption]
         public string GetUsage()
         {
             var usage = new StringBuilder();
             usage.AppendLine("Usage: -f [file name] -l [download location] -k [username] -p [password]\n");
-            usage.AppendLine("Example: -f ../test.csv -l /tmp -u aUsername -p e261742d-fe2f-4569-95e6-312689d049 --poll 10");
+            usage.AppendLine("Example: -f ../test.csv -l /tmp --u aUsername -p e261742d-fe2f-4569-95e6-312689d049 --poll 10");
             usage.AppendLine("Upload test.csv, process it and download the results to /tmp, poll every 10s\n");
 
             // Remove the copyright and version lines as they are unnecessary

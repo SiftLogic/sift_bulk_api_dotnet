@@ -26,8 +26,10 @@ namespace CSharpFTPExample
 
         public string uploadFileName;
         public int pollEvery;
+        public string protocol;
+        public string notify;
         public ISession ftp;
-        // There is no way to retrieve server responses from WinSCP when the requests succeeds. So s WebClient hack is used.
+        // There is no way to retrieve server responses from WinSCP when the requests succeeds. So a WebClient hack.
         // See GetStatusDescription
         public IWebClient ftpOther;
 
@@ -38,14 +40,19 @@ namespace CSharpFTPExample
         /// <param name="host">The host to connect to.</param>
         /// <param name="host">The port to connect to.</param>
         /// <param name="pollEvery">Number of seconds to poll for.</param>
+        /// <param name="protocol">What protocol to use to transfer data.</param>
+        /// <param name="notify">The full email address to notify once an upload completes.</param>
         /// </summary>
-        public Operations(string username, string password, string host = "localhost", int port = 21, int pollEvery = 300)
+        public Operations(string username, string password, string host = "localhost", int port = 21,
+                          int pollEvery = 300, string protocol = "http", string notify = null)
         {
             this.username = username;
             this.password = password;
             this.host = host;
             this.port = port;
             this.pollEvery = pollEvery;
+            this.protocol = protocol;
+            this.notify = notify;
         }
 
         /// <summary>
@@ -162,8 +169,8 @@ namespace CSharpFTPExample
         }
 
         /// <summary>
-        /// Throws an error if the file could not be found on the file system. Not tested, it is used to isolate File's static
-        /// methods.
+        /// Throws an error if the file could not be found on the file system. Not tested, it is used to isolate File's
+        /// static methods.
         /// <param name="file">Full path of the file e.g. /complete/test.csv </param>
         /// </summary>
         public virtual void ThrowErrorIfLocalFileNotPresent(string file)
@@ -227,7 +234,7 @@ namespace CSharpFTPExample
         }
 
         /// <summary>
-        /// Waits the specified amount of time then calls Download again. Does not pause execution on the current thread.
+        /// Waits the specified amount of time then calls Download again. Does not pause execution on the thread.
         /// <param name="file">The file name being waited on</param>
         /// <param name="timer">A timer instance with the interval time already set</param>
         /// <param name="callback">Called once the wait is over. No parameters.</param>

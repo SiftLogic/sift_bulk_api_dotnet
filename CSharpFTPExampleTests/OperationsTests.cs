@@ -27,6 +27,8 @@ namespace CSharpFTPExampleTests
         private string host = "bacon";
         private int port = 9871;
         private int pollEvery = 1;
+        private string protocol = "http";
+        private string notify = "test@test.com";
 
         private string file = @"C:\WINDOWS\Temp\test.csv";
         private string directory;
@@ -36,7 +38,7 @@ namespace CSharpFTPExampleTests
         [TestInitialize]
         public void Setup()
         {
-            mockOperations = new Mock<Operations>(username, password, host, port, pollEvery);
+            mockOperations = new Mock<Operations>(username, password, host, port, pollEvery, protocol, notify);
             mockOperations.CallBase = true;
             operations = mockOperations.Object;
 
@@ -54,6 +56,8 @@ namespace CSharpFTPExampleTests
         public void Instantiation_AllVariables_SetsValues()
         {
             Assert.AreEqual(operations.pollEvery, pollEvery);
+            Assert.AreEqual(operations.protocol, protocol);
+            Assert.AreEqual(operations.notify, notify);
 
             var details = operations.GetConnectionDetails();
             Assert.AreEqual(details["username"], username);
@@ -68,6 +72,8 @@ namespace CSharpFTPExampleTests
             Operations operations = new Operations(username, password);
 
             Assert.AreEqual(operations.pollEvery, 300);
+            Assert.AreEqual(operations.protocol, "http");
+            Assert.AreEqual(operations.notify, null);
 
             var details = operations.GetConnectionDetails();
             Assert.AreEqual(details["host"], "localhost");
