@@ -27,8 +27,6 @@ namespace CSharpFTPExampleTests
         private string host = "bacon";
         private int port = 9871;
         private int pollEvery = 1;
-        private string protocol = "http";
-        private string notify = "test@test.com";
 
         private string file = @"C:\WINDOWS\Temp\test.csv";
         private string directory;

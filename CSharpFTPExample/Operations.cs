@@ -83,11 +83,20 @@ namespace CSharpFTPExample
         /// Uploads the specified file.
         /// <param name="file">The absolute location of the file to upload.</param>
         /// <param name="singleFile">If the file is uploaded in single file mode. Defaults to false.</param>
+        /// <param name="notify"> The full email address to notify once an upload completes. If an empty value
+        ///                       is sent no address will be contacted.</param>
         /// <value>A Tuple in the form (<upload succeeded>, <message>)</value>
         /// </summary>
-        public Tuple<bool, string> Upload(string file, bool singleFile = false)
+        public Tuple<bool, string> Upload(string file, bool singleFile = false, string notify = null)
         {
-            return ftpOperations.Upload(file, singleFile);
+            if (this.protocol == "ftp")
+            {
+                return ftpOperations.Upload(file, singleFile);
+            }
+            else
+            {
+                return httpOperations.Upload(file, singleFile, notify);
+            }
         }
 
         /// <summary>

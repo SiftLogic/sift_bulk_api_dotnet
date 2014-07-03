@@ -22,7 +22,7 @@ namespace CSharpFTPExample
           HelpText = "The absolute location of where the results file should be placed")]
         public string Location { get; set; }
 
-        [Option('u', DefaultValue = null,
+        [Option('u', DefaultValue = null, // (Optional)
           HelpText = "The username defined in the manage api keys section")]
         public string Key { get; set; }
 
@@ -63,8 +63,8 @@ namespace CSharpFTPExample
         public string GetUsage()
         {
             var usage = new StringBuilder();
-            usage.AppendLine("Usage: -f [file name] -l [download location] -k [username] -p [password]\n");
-            usage.AppendLine("Example: -f ../test.csv -l /tmp --u aUsername -p e261742d-fe2f-4569-95e6-312689d049 --poll 10");
+            usage.AppendLine("Usage: -f [file name] -l [download location] -p [password]\n");
+            usage.AppendLine("Example: -f ../test.csv -l /tmp -p e261742d-fe2f-4569-95e6-312689d049 --poll 10");
             usage.AppendLine("Upload test.csv, process it and download the results to /tmp, poll every 10s\n");
 
             // Remove the copyright and version lines as they are unnecessary
@@ -98,31 +98,31 @@ namespace CSharpFTPExample
                     throw new Exception(result.Item2);
                 }
 
-                result = operations.Upload(opts.File, opts.SingleFile);
+                result = operations.Upload(opts.File, opts.SingleFile, opts.Notify);
                 if (!result.Item1)
                 {
                     throw new Exception(result.Item2);
                 }
                 Console.WriteLine(result.Item2);
 
-                operations.Download(opts.Location, opts.Remove, delegate(bool noError, string message)
-                {
-                    if (!noError)
-                    {
-                        throw new Exception(message);
-                    }
+                //operations.Download(opts.Location, opts.Remove, delegate(bool noError, string message)
+                //{
+                //    if (!noError)
+                //    {
+                //        throw new Exception(message);
+                //    }
                     
                     
-                    Console.WriteLine(message);
+                //    Console.WriteLine(message);
 
-                    if (opts.Remove)
-                    {
-                        Console.WriteLine("Also, removed the file from the server.");
-                    }
+                //    if (opts.Remove)
+                //    {
+                //        Console.WriteLine("Also, removed the file from the server.");
+                //    }
 
-                    Console.WriteLine("Press Enter to close this program...");
-                    Console.ReadLine();
-                });
+                //    Console.WriteLine("Press Enter to close this program...");
+                //    Console.ReadLine();
+                //});
 
                 Console.WriteLine("downloading file, press enter any time to quit before downloading...");
                 Console.ReadLine();

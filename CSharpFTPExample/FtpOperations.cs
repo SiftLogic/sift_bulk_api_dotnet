@@ -19,8 +19,6 @@ namespace CSharpFTPExample
         private SessionOptions options;
 
         public ISession ftp;
-        // There is no way to retrieve server responses from WinSCP when the requests succeeds. So a WebClient hack.
-        // See GetStatusDescription
         public IWebClient ftpOther;
         public string uploadFileName;
 
@@ -70,9 +68,6 @@ namespace CSharpFTPExample
         /// </summary>
         public virtual Tuple<bool, string> Upload(string file, bool singleFile = false)
         {
-            // TEST: http://stackoverflow.com/questions/2950292/how-to-upload-multiple-files-using-webclient-uploadfile-uploadvalues-in-c
-            // http://aspnetupload.com/Upload-File-POST-HttpWebRequest-WebClient-RFC-1867.aspx
-
             var type = singleFile ? "default" : "splitfile";
             var directory = "/import_" + options.UserName + "_" + type + "_config/";
 

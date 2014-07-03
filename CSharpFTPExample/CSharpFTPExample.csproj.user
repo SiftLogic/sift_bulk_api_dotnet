@@ -1,10 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-    <StartArguments>-f C:\Users\IEUser\sift_bulk_api_dotnet\test.csv -l C:\Users\IEUser\Desktop\ --u TestKey -p d885c8e3-56ee-4d47-9167-3bb8fb65dcdf --poll 10 --host bacon --protocol ftp</StartArguments>
+    <StartArguments>-f C:\Users\IEUser\sift_bulk_api_dotnet\test.csv -l C:\Users\IEUser\Desktop\ --u TestKey -p d254fa61-5b58-4081-8bdd-577f130949db --port 82 --poll 10 --host outer</StartArguments>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
-    <StartArguments>-f C:\Users\IEUser\sift_bulk_api_dotnet\test.csv -l C:\Users\IEUser\Desktop\ --u TestKey -p d885c8e3-56ee-4d47-9167-3bb8fb65dcdf --poll 10 --host bacon --protocol ftp</StartArguments>
+    <StartArguments>-f C:\Users\IEUser\sift_bulk_api_dotnet\test.csv -l C:\Users\IEUser\Desktop\ -p d254fa61-5b58-4081-8bdd-577f130949db --port 82 --poll 10 --host outer --singleFile true --notify jacob%40jacobfriesen.com</StartArguments>
   </PropertyGroup>
   <PropertyGroup>
     <PublishUrlHistory />

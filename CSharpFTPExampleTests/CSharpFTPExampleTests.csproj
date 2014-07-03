@@ -35,6 +35,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="EasyHttp">
+      <HintPath>..\CSharpFTPExample\bin\Debug\EasyHttp.dll</HintPath>
+    </Reference>
     <Reference Include="Moq">
       <HintPath>..\CSharpFTPExample\packages\Moq.4.2.1402.2112\lib\net40\Moq.dll</HintPath>
     </Reference>
