@@ -70,6 +70,9 @@ namespace CSharpFTPExample
         /// </summary>
         public virtual Tuple<bool, string> Upload(string file, bool singleFile = false)
         {
+            // TEST: http://stackoverflow.com/questions/2950292/how-to-upload-multiple-files-using-webclient-uploadfile-uploadvalues-in-c
+            // http://aspnetupload.com/Upload-File-POST-HttpWebRequest-WebClient-RFC-1867.aspx
+
             var type = singleFile ? "default" : "splitfile";
             var directory = "/import_" + options.UserName + "_" + type + "_config/";
 

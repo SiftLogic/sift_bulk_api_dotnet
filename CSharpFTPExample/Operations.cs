@@ -6,7 +6,6 @@ using System.IO;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Timers;
-using WinSCP;
 
 namespace CSharpFTPExample
 {
@@ -31,6 +30,7 @@ namespace CSharpFTPExample
         public IWebClient ftpOther;
 
         public FtpOperations ftpOperations;
+        public HttpOperations httpOperations;
 
         /// <summary>
         /// The constructor adds properties to the object which are used in init.
@@ -53,7 +53,14 @@ namespace CSharpFTPExample
             this.protocol = protocol;
             this.notify = notify;
 
-            ftpOperations = new FtpOperations();
+            if (this.protocol == "ftp")
+            {
+                ftpOperations = new FtpOperations();
+            }
+            else
+            {
+                httpOperations = new HttpOperations();
+            }
         }
 
         /// <summary>
@@ -62,7 +69,14 @@ namespace CSharpFTPExample
         /// </summary>
         public virtual Tuple<bool, string> Init()
         {
-            return ftpOperations.Init(new WrappedSession(), username, password, host, port);
+            if (this.protocol == "ftp")
+            {
+                return ftpOperations.Init(new WrappedSession(), username, password, host, port);
+            }
+            else
+            {
+                return httpOperations.Init(password, host, port);
+            }
         }
 
         /// <summary>

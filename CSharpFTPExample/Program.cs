@@ -90,7 +90,8 @@ namespace CSharpFTPExample
             var opts = new Options();
             if (CommandLine.Parser.Default.ParseArguments(args, opts))
             {
-                Operations operations = new Operations(opts.Key, opts.Password, opts.Port, opts.Host, opts.Poll);
+                Operations operations = new Operations(opts.Key, opts.Password, opts.Port, opts.Host, opts.Poll,
+                                                       opts.Protocol, opts.Notify);
                 var result = operations.Init();
                 if (!result.Item1)
                 {

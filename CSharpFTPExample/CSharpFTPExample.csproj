@@ -82,6 +82,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="FtpOperations.cs" />
+    <Compile Include="HttpOperations.cs" />
     <Compile Include="ISession.cs" />
     <Compile Include="IWebClient.cs" />
     <Compile Include="Operations.cs" />

@@ -6,7 +6,6 @@ using System.Collections.Specialized;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using CSharpFTPExample;
 using System.Net;
-using WinSCP;
 using Moq;
 using Moq.Protected;
 
@@ -18,6 +17,7 @@ namespace CSharpFTPExampleTests
         private Mock<Operations> mockOperations;
         private Operations operations;
         private Mock<FtpOperations> mockFtpOperations;
+        private Mock<HttpOperations> mockHttpOperations;
         private Mock<IWebClient> mockWebClient;
         private IWebClient client;
 
@@ -26,13 +26,12 @@ namespace CSharpFTPExampleTests
         private string host = "bacon";
         private int port = 9871;
         private int pollEvery = 1;
-        private string protocol = "http";
+        private string protocol = "ftp";
         private string notify = "test@test.com";
 
-        [TestInitialize]
-        public void Setup()
+        private void setOperationsWithProtocol(string newProtocol)
         {
-            mockOperations = new Mock<Operations>(username, password, port, host, pollEvery, protocol, notify);
+            mockOperations = new Mock<Operations>(username, password, port, host, pollEvery, newProtocol, notify);
             mockOperations.CallBase = true;
             operations = mockOperations.Object;
 
@@ -40,10 +39,18 @@ namespace CSharpFTPExampleTests
             client = mockWebClient.Object;
 
             mockFtpOperations = new Mock<FtpOperations>();
+            mockHttpOperations = new Mock<HttpOperations>();
 
             operations.Init();
 
             operations.ftpOperations = mockFtpOperations.Object;
+            operations.httpOperations = mockHttpOperations.Object;
+        }
+
+        [TestInitialize]
+        public void Setup()
+        {
+            setOperationsWithProtocol(protocol);
         }
 
         [TestMethod]
@@ -82,6 +89,20 @@ namespace CSharpFTPExampleTests
                              .Returns(new Tuple<bool, string>(true, "A Message."));
 
             Assert.AreEqual(operations.Init(), new Tuple<bool, string>(true, "A Message."));
+
+            mockFtpOperations.VerifyAll();
+        }
+
+        [TestMethod]
+        public void Init_Default_CallsHttp()
+        {
+            setOperationsWithProtocol("http");
+            mockHttpOperations.Setup(m => m.Init(password, host, port))
+                              .Returns(new Tuple<bool, string>(true, "A Message."));
+
+            Assert.AreEqual(operations.Init(), new Tuple<bool, string>(true, "A Message."));
+
+            mockHttpOperations.VerifyAll();
         }
 
         // Upload
@@ -93,6 +114,8 @@ namespace CSharpFTPExampleTests
                              .Returns(new Tuple<bool, string>(true, "A Message."));
 
             Assert.AreEqual(operations.Upload("test.csv", false), new Tuple<bool, string>(true, "A Message."));
+
+            mockFtpOperations.VerifyAll();
         }
 
         // Download
@@ -116,6 +139,8 @@ namespace CSharpFTPExampleTests
                              .Returns(new Tuple<bool, string>(true, "A Message."));
 
             Assert.AreEqual(operations.Remove(), new Tuple<bool, string>(true, "A Message."));
+
+            mockFtpOperations.VerifyAll();
         }
     }
 }
