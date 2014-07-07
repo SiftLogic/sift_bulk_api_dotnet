@@ -109,32 +109,7 @@ namespace CSharpFTPExample
                 }
                 else if (!String.IsNullOrEmpty(output.status) && output.status == "completed")
                 {
-                    response = http.GetFile(output.download_url, @location + "\\" + output.job + ".zip");
-
-                    dynamic output2 = reader.Read(GetRawResponse(response));
-                    if (output2 != null && output2.status == "error")
-                    {
-                        callback(false, output2.msg);
-                    }
-                    else
-                    {
-                        if (removeAfter)
-                        {
-                            var result = Remove();
-                            if (!result.Item1)
-                            {
-                                callback(result.Item1, result.Item2);
-                            }
-                            else
-                            {
-                                callback(true, output.job + ".zip downloaded to " + location);
-                            }
-                        }
-                        else
-                        {
-                            callback(true, output.job + ".zip downloaded to " + location);
-                        }
-                    }
+                    DownloadAndDelete(output, location, removeAfter, callback);
                 }
                 else
                 {
@@ -163,6 +138,48 @@ namespace CSharpFTPExample
             timer.Elapsed += (s_, e_) => callback();
             timer.AutoReset = false;
             timer.Start();
+        }
+
+        /// <summary>
+        /// Downloads the actual file and then deletes if specified.
+        /// <param name="location">The object received from the last status retrieval</param>
+        /// <param name="location">The absolute location of the file to download.</param>
+        /// <param name="removeAfter"> If the results file should be removed after downloading.</param>
+        /// <param name="callback">Called once the file downloads or there is an error. Called with:
+        ///   noError: If an error occured.
+        ///   message: Message returned, will never be empty.
+        /// </param>
+        /// </summary>
+        public virtual void DownloadAndDelete(dynamic output, string location, bool removeAfter,
+                                              Action<bool, string> callback)
+        {
+            var response = http.GetFile(output.download_url, @location + "\\" + output.job + ".zip");
+
+            var reader = new JsonReader();
+            dynamic output2 = reader.Read((string)GetRawResponse(response));
+            if (output2 != null && output2.status == "error")
+            {
+                callback(false, output2.msg);
+            }
+            else
+            {
+                if (removeAfter)
+                {
+                    var result = Remove();
+                    if (!result.Item1)
+                    {
+                        callback(result.Item1, result.Item2);
+                    }
+                    else
+                    {
+                        callback(true, output.job + ".zip downloaded to " + location);
+                    }
+                }
+                else
+                {
+                    callback(true, output.job + ".zip downloaded to " + location);
+                }
+            }
         }
 
         /// <summary>

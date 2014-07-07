@@ -46,15 +46,18 @@ Files And Folders
  * **CSharpFTPExample.csproj:** The project file used to load FTP example code.
  * **CSharpFTPExample.sln:** The solution file for the entire project including the tests.
  * **Program.cs:** Used to run the program, accepts command line arguments.
- * **IWebClient.cs:** An interface around System.Net.WebClient. Since most mocking libraries including what we are using (Moq) cannot test non virtual methods, interfaces like this must be created around concrete classes.
- * **WrappedWebClient.cs:** The implementation for IWebClient.cs, just calls WebClient's methods without modification.
+ * **Operations.cs:** Object that interfaces with server connection modes.
+ * **FtpOperations.cs:** Object that provides an FTP interface to the server.
+ * **HttpOperations.cs:** Object that provides an HTTP interface to the server.
+ * **I\*.cs:** An custom interface around a class. Since most mocking libraries including what we are using (Moq) cannot test non virtual methods, interfaces like this must be created around concrete classes.
+ * **Wrapped\*.cs:** The implementation for the corresponding I\*.cs.
  * **packages.config:** XML Specification of the libraries this program uses.
 
 * **CSharpFTPExampleTests/:** Visual Studio project folder of the tests for the main code. Important files and folders:
  * **bin/:** Contains the debug and release executables.
  * **Properties/:** Basic information about the project such as copyrights
  * **CSharpFTPExample.csproj:** The project file used to load FTP example test code.
- * **OperationsTests.cs:** Tests for the Operations class
+ * **\*Test.js:** Unit tests of API functionality. It is recommended that you update these if you want to customize connection code.
  * **packages.config:** XML Specification of the libraries this program uses
 
 * **test.csv:** A small sample records file. 
