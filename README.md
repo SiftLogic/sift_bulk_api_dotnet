@@ -1,7 +1,7 @@
-.Net FTP API
-============
+.Net Bulk API
+=============
 
-This demonstrates how to connect to the ftp server with .Net using C#. You will need to know your apikey and password which can be found in the UI: API Keys -\> Manage -\> Actions -\> Access Details. Once you have that you can try the executable file for an upload demo. For example:
+This demonstrates how to connect to the bulk server with .net using C#. Currently, HTTP and FTP are supported for connections. Unlike FTP, HTTP requires no username just the password (auth token). The apikey and password/auth token are found in the UI: API Keys -\> Manage -\> Actions -\> Access Details. Once you have that you can try the executable file for an upload demo. For example:
 <pre>
   <code>
     CSharpFTPExample\bin\Release\CSharpFTPExample.exe -f C:\full\path\test.csv -l C:\WINDOWS\Temp\ --u aUsername -p e261742d-fe2f-4569-95e6-312689d04903 --poll 10
