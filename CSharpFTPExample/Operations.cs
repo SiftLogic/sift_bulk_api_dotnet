@@ -126,7 +126,14 @@ namespace CSharpFTPExample
         /// </summary>
         public virtual Tuple<bool, string> Remove()
         {
-            return ftpOperations.Remove();
+            if (this.protocol == "ftp")
+            {
+                return ftpOperations.Remove();
+            }
+            else
+            {
+                return httpOperations.Remove();
+            }
         }
 
         /// <summary>

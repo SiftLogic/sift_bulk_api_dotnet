@@ -1,10 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-    <StartArguments>-f C:\Users\IEUser\sift_bulk_api_dotnet\test.csv -l C:\Users\IEUser\Desktop\ --u TestKey -p 3290b3e2-1612-4f0d-99d2-3f1aae35003d --port 82 --poll 10 --host outer</StartArguments>
+    <StartArguments>-f C:\Users\IEUser\sift_bulk_api_dotnet\test.csv -l C:\Users\IEUser\Desktop\ --u TestKey -p 3290b3e2-1612-4f0d-99d2-3f1aae35003d --port 82 --poll 10 --host outer --remove true</StartArguments>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
-    <StartArguments>-f C:\Users\IEUser\sift_bulk_api_dotnet\test.csv -l C:\Users\IEUser\Desktop\ -p 3290b3e2-1612-4f0d-99d2-3f1aae35003d --port 82 --poll 10 --host outer --singleFile true --notify jacob%40jacobfriesen.com</StartArguments>
+    <StartArguments>-f C:\Users\IEUser\sift_bulk_api_dotnet\test.csv -l C:\Users\IEUser\Desktop\ -p 3290b3e2-1612-4f0d-99d2-3f1aae35003d --port 82 --poll 10 --host outer --singleFile true --remove true --notify jacob%40jacobfriesen.com</StartArguments>
   </PropertyGroup>
   <PropertyGroup>
     <PublishUrlHistory />

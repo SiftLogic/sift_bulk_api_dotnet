@@ -165,6 +165,18 @@ namespace CSharpFTPExampleTests
 
             mockFtpOperations.VerifyAll();
         }
+
+        [TestMethod]
+        public void Remove_Default_CallsHttp()
+        {
+            setOperationsWithProtocol("http");
+            mockHttpOperations.Setup(m => m.Remove())
+                              .Returns(new Tuple<bool, string>(true, "A Message."));
+
+            Assert.AreEqual(operations.Remove(), new Tuple<bool, string>(true, "A Message."));
+
+            mockHttpOperations.VerifyAll();
+        }
     }
 }
 

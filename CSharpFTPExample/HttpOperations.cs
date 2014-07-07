@@ -2,7 +2,6 @@
 using System.Linq;
 using System.IO;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using EasyHttp.Http;
@@ -119,7 +118,22 @@ namespace CSharpFTPExample
                     }
                     else
                     {
-                        callback(true, output.job + ".zip downloaded to " + location);
+                        if (removeAfter)
+                        {
+                            var result = Remove();
+                            if (!result.Item1)
+                            {
+                                callback(result.Item1, result.Item2);
+                            }
+                            else
+                            {
+                                callback(true, output.job + ".zip downloaded to " + location);
+                            }
+                        }
+                        else
+                        {
+                            callback(true, output.job + ".zip downloaded to " + location);
+                        }
                     }
                 }
                 else
@@ -149,6 +163,26 @@ namespace CSharpFTPExample
             timer.Elapsed += (s_, e_) => callback();
             timer.AutoReset = false;
             timer.Start();
+        }
+
+        /// <summary>
+        /// Removes the results file from the server.
+        /// <value>A Tuple in the form (<remove succeeded>, <error message>)</value>
+        /// </summary>
+        public virtual Tuple<bool, string> Remove()
+        {
+            var response = http.Delete(statusUrl);
+
+            var reader = new JsonReader();
+            dynamic output = reader.Read(GetRawResponse(response));
+            if (output != null && output.status == "error")
+            {
+                return new Tuple<bool, string>(false, output.msg);
+            }
+            else
+            {
+                return new Tuple<bool, string>(true, "");
+            }
         }
     }
 }

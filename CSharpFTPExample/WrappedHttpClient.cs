@@ -62,6 +62,19 @@ namespace CSharpFTPExample
             }
         }
 
+        public virtual HttpResponse Delete(string uri)
+        {
+            if (!mocked)
+            {
+                return http.Delete(uri);
+            }
+            else
+            {
+                calls.Add(new object[] { uri });
+                return mockedResponse;
+            }
+        }
+
         public HttpRequest Request
         {
             get { return http.Request; }

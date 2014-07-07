@@ -111,13 +111,12 @@ namespace CSharpFTPExample
                     {
                         throw new Exception(message);
                     }
-                    
                     Console.WriteLine(message);
 
-                    //if (opts.Remove)
-                    //{
-                    //    Console.WriteLine("Also, removed the file from the server.");
-                    //}
+                    if (opts.Remove)
+                    {
+                        Console.WriteLine("Also, removed the file from the server.");
+                    }
 
                     Console.WriteLine("Press Enter to close this program...");
                     Console.ReadLine();

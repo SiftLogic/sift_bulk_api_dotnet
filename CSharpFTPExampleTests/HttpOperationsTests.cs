@@ -223,7 +223,7 @@ namespace CSharpFTPExampleTests
             // Setup waiting
             this.resetEvent = new AutoResetEvent(false);
 
-            httpOperations.Download("\test", pollEvery, false, delegate(bool noError, string message)
+            httpOperations.Download(@"\test", pollEvery, false, delegate(bool noError, string message)
             {
                 Assert.IsFalse(noError);
                 Assert.AreEqual(message, "An Error");
@@ -232,9 +232,12 @@ namespace CSharpFTPExampleTests
                 this.resetEvent.Set();
             });
 
+            var calls = httpOperations.http.LastCalls;
+            Assert.AreEqual(calls[1][0], "a_url");
+            Assert.AreEqual(calls[1][1], @"\test\a_job.zip");
+
             // Do not pass this statement until the waiting is done
             Assert.IsTrue(this.resetEvent.WaitOne());
-
             mockOperations.VerifyAll();
         }
 
@@ -252,6 +255,68 @@ namespace CSharpFTPExampleTests
             this.resetEvent = new AutoResetEvent(false);
 
             httpOperations.Download("\test", pollEvery, false, delegate(bool noError, string message)
+            {
+                Assert.IsTrue(noError);
+                Assert.AreEqual(message, "a_job.zip downloaded to \test");
+
+                // Stop waiting
+                this.resetEvent.Set();
+            });
+
+            // Do not pass this statement until the waiting is done
+            Assert.IsTrue(this.resetEvent.WaitOne());
+
+            mockOperations.VerifyAll();
+        }
+
+        [TestMethod]
+        public void Download_Default_FileFoundAndErroredDelete()
+        {
+            var returns = new Queue<string>();
+            returns.Enqueue("{\"status\": \"completed\", \"download_url\": \"a_url\", \"job\": \"a_job\"}");
+            returns.Enqueue("{\"status\": \"other\"}");
+
+            mockOperations.Setup(m => m.GetRawResponse(It.IsAny<HttpResponse>()))
+                          .Returns(returns.Dequeue);
+
+            mockOperations.Setup(m => m.Remove())
+                          .Returns(new Tuple<bool, string>(false, "An Error"));
+
+            // Setup waiting
+            this.resetEvent = new AutoResetEvent(false);
+
+            httpOperations.Download("\test", pollEvery, true, delegate(bool noError, string message)
+            {
+                Assert.IsFalse(noError);
+                Assert.AreEqual(message, "An Error");
+
+                // Stop waiting
+                this.resetEvent.Set();
+            });
+
+            // Do not pass this statement until the waiting is done
+            Assert.IsTrue(this.resetEvent.WaitOne());
+
+            mockOperations.VerifyAll();
+        }
+
+        [TestMethod]
+        public void Download_Default_FileFoundAndDelete()
+        {
+            var returns = new Queue<string>();
+            returns.Enqueue("{\"status\": \"completed\", \"download_url\": \"a_url\", \"job\": \"a_job\"}");
+            returns.Enqueue("{\"status\": \"other\"}");
+
+            mockOperations.Setup(m => m.GetRawResponse(It.IsAny<HttpResponse>()))
+                          .Returns(returns.Dequeue);
+
+            mockOperations.Setup(m => m.Remove())
+                          .Returns(new Tuple<bool, string>(true, ""));
+
+            // Setup waiting
+            this.resetEvent = new AutoResetEvent(false);
+
+            httpOperations.Download("\test", pollEvery, true, delegate(bool noError, string message)
             {
                 Assert.IsTrue(noError);
                 Assert.AreEqual(message, "a_job.zip downloaded to \test");
