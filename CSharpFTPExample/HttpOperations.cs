@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,6 +8,7 @@ using System.Threading.Tasks;
 using EasyHttp.Http;
 using EasyHttp.Infrastructure;
 using JsonFx.Json;
+using System.Timers;
 
 namespace CSharpFTPExample
 {
@@ -82,6 +84,71 @@ namespace CSharpFTPExample
         public virtual string GetRawResponse(HttpResponse response)
         {
             return response.RawText;
+        }
+
+        /// <summary>
+        /// Polls every pollEvery seconds until the last uploaded file can be downloaded. Then downloads.
+        /// <param name="location">The absolute location of the file to upload.</param>
+        /// <param name="removeAfter"> If the results file should be removed after downloading.</param>
+        /// <param name="pollEvery"> Time in milleseconds to wait between each poll.</param>
+        /// <param name="callback">Called once the file downloads or there is an error. Called with:
+        ///   noError: If an error occured.
+        ///   message: Message returned, will never be empty.
+        /// </param>
+        /// </summary>
+        public virtual void Download(string location, int pollEvery, bool removeAfter, Action<bool, string> callback)
+        {
+            try
+            {
+                HttpResponse response = http.Get(statusUrl);
+
+                var reader = new JsonReader();
+                dynamic output = reader.Read(GetRawResponse(response));
+                if (output.status == "error")
+                {
+                    callback(false, output.msg);
+                }
+                else if (!String.IsNullOrEmpty(output.status) && output.status == "completed")
+                {
+                    response = http.GetFile(output.download_url, @location + "\\" + output.job + ".zip");
+
+                    dynamic output2 = reader.Read(GetRawResponse(response));
+                    if (output2 != null && output2.status == "error")
+                    {
+                        callback(false, output2.msg);
+                    }
+                    else
+                    {
+                        callback(true, output.job + ".zip downloaded to " + location);
+                    }
+                }
+                else
+                {
+                    WaitAndDownload((string)output.job, new Timer(pollEvery * 1000), delegate()
+                    {
+                        Download(location, pollEvery, removeAfter, callback);
+                    });
+                }
+            }
+            catch (Exception e)
+            {
+                callback(false, e.Message);
+            }
+        }
+
+        /// <summary>
+        /// Waits the specified amount of time then calls Download again. Does not pause execution on the thread.
+        /// <param name="file">The file name being waited on</param>
+        /// <param name="timer">A timer instance with the interval time already set</param>
+        /// <param name="callback">Called once the wait is over. No parameters.</param>
+        /// </summary>
+        public virtual void WaitAndDownload(string file, Timer timer, Action callback)
+        {
+            Console.WriteLine("Waiting for results file " + file);
+
+            timer.Elapsed += (s_, e_) => callback();
+            timer.AutoReset = false;
+            timer.Start();
         }
     }
 }

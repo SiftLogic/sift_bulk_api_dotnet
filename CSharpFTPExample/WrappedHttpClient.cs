@@ -36,6 +36,32 @@ namespace CSharpFTPExample
             }
         }
 
+        public virtual HttpResponse Get(string uri)
+        {
+            if (!mocked)
+            {
+                return http.Get(uri);
+            }
+            else
+            {
+                calls.Add(new object[] { uri });
+                return mockedResponse;
+            }
+        }
+
+        public virtual HttpResponse GetFile(string uri, string filename)
+        {
+            if (!mocked)
+            {
+                return http.GetAsFile(uri, filename);
+            }
+            else
+            {
+                calls.Add(new object[] { uri, filename });
+                return mockedResponse;
+            }
+        }
+
         public HttpRequest Request
         {
             get { return http.Request; }

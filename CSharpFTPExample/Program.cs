@@ -105,24 +105,23 @@ namespace CSharpFTPExample
                 }
                 Console.WriteLine(result.Item2);
 
-                //operations.Download(opts.Location, opts.Remove, delegate(bool noError, string message)
-                //{
-                //    if (!noError)
-                //    {
-                //        throw new Exception(message);
-                //    }
+                operations.Download(opts.Location, opts.Remove, delegate(bool noError, string message)
+                {
+                    if (!noError)
+                    {
+                        throw new Exception(message);
+                    }
                     
-                    
-                //    Console.WriteLine(message);
+                    Console.WriteLine(message);
 
-                //    if (opts.Remove)
-                //    {
-                //        Console.WriteLine("Also, removed the file from the server.");
-                //    }
+                    //if (opts.Remove)
+                    //{
+                    //    Console.WriteLine("Also, removed the file from the server.");
+                    //}
 
-                //    Console.WriteLine("Press Enter to close this program...");
-                //    Console.ReadLine();
-                //});
+                    Console.WriteLine("Press Enter to close this program...");
+                    Console.ReadLine();
+                });
 
                 Console.WriteLine("downloading file, press enter any time to quit before downloading...");
                 Console.ReadLine();

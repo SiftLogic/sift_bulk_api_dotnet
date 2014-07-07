@@ -110,7 +110,14 @@ namespace CSharpFTPExample
         /// </summary>
         public virtual void Download(string location, bool removeAfter, Action<bool, string> callback)
         {
-            ftpOperations.Download(location, pollEvery, removeAfter, callback);
+            if (this.protocol == "ftp")
+            {
+                ftpOperations.Download(location, pollEvery, removeAfter, callback);
+            }
+            else
+            {
+                httpOperations.Download(location, pollEvery, removeAfter, callback);
+            }
         }
 
         /// <summary>

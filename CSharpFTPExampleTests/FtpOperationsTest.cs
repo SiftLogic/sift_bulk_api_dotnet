@@ -231,7 +231,7 @@ namespace CSharpFTPExampleTests
 
             operations.Download("\test", pollEvery, false, delegate(bool noError, string message)
             {
-                //Assert.IsTrue(noError);
+                Assert.IsTrue(noError);
                 Assert.AreEqual(message, "test.csv downloaded to \test");
 
                 // Stop waiting

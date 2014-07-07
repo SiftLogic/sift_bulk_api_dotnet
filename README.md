@@ -9,9 +9,7 @@ This demonstrates how to connect to the ftp server with .Net using C#. You will 
 </pre>
 The CLI is described in more detail with <code>CSharpFTPExample\bin\Release\CSharpFTPExample.exe</code>
 
-It is recommended to include the Operations file and use the methods in there to customize your process. The methods are described in file. If you want to cut down on code, this only requires the 
-[CommandLineParser](https://commandline.codeplex.com/) library.
-
+It is recommended to include the Operations file and use the methods in there to customize your process. The methods are described in file.
 Licensing
 =========
 

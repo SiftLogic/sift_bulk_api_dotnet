@@ -118,6 +118,18 @@ namespace CSharpFTPExampleTests
             mockFtpOperations.VerifyAll();
         }
 
+        [TestMethod]
+        public void Upload_Default_CallsHttp()
+        {
+            setOperationsWithProtocol("http");
+            mockHttpOperations.Setup(m => m.Upload("test.csv", false, null))
+                             .Returns(new Tuple<bool, string>(true, "A Message."));
+
+            Assert.AreEqual(operations.Upload("test.csv", false), new Tuple<bool, string>(true, "A Message."));
+
+            mockHttpOperations.VerifyAll();
+        }
+
         // Download
 
         [TestMethod]
@@ -128,6 +140,17 @@ namespace CSharpFTPExampleTests
             operations.Download("C:\\TEMP", true, delegate(bool noError, string message){});
 
             mockFtpOperations.VerifyAll();
+        }
+
+        [TestMethod]
+        public void Download_Default_CallsHttp()
+        {
+            setOperationsWithProtocol("http");
+            mockHttpOperations.Setup(m => m.Download("C:\\TEMP", pollEvery, true, It.IsAny<Action<bool, string>>()));
+
+            operations.Download("C:\\TEMP", true, delegate(bool noError, string message) { });
+
+            mockHttpOperations.VerifyAll();
         }
 
         // Remove

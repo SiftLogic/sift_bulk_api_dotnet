@@ -12,6 +12,8 @@ namespace CSharpFTPExample
     public interface IHttpClient
     {
         HttpResponse Post(string uri, IDictionary<string, object> formData, IList<FileData> files);
+        HttpResponse Get(string uri);
+        HttpResponse GetFile(string uri, string filename);
         HttpRequest Request { get; }
         List<object[]> LastCalls { get; }
         HttpResponse MockedResponse { get; set; }

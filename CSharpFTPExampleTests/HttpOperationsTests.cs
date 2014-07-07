@@ -1,4 +1,6 @@
 ﻿using System;
+using System.IO;
+using System.Threading;
 using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using CSharpFTPExample;
@@ -17,6 +19,9 @@ namespace CSharpFTPExampleTests
         private Mock<WrappedHttpClient> mockHttp;
 
         private string apikey = "12345";
+        private int pollEvery = 1;
+
+        private AutoResetEvent resetEvent;
 
         [TestInitialize]
         public void Setup()
@@ -124,6 +129,174 @@ namespace CSharpFTPExampleTests
 
             var result = new Tuple<bool, string>(false, "An Error");
             Assert.AreEqual(httpOperations.Upload("test.csv", true, "test@test.com"), result);
+        }
+
+        // Download
+
+        [TestMethod]
+        public void Download_Default_AnErrorReturnsFalse()
+        {
+            httpOperations.statusUrl = "http://bacon:80/status";
+
+            mockOperations.Setup(m => m.GetRawResponse(It.IsAny<HttpResponse>()))
+                          .Throws(new Exception("An Error"));
+
+            // Setup waiting
+            this.resetEvent = new AutoResetEvent(false);
+
+            httpOperations.Download("test.csv", pollEvery, false, delegate(bool noError, string message)
+            {
+                Assert.IsFalse(noError);
+                Assert.AreEqual(message, "An Error");
+
+                // Stop waiting
+                this.resetEvent.Set();
+            });
+
+            var calls = httpOperations.http.LastCalls;
+            Assert.AreEqual(calls[0][0], "http://bacon:80/status");
+
+            // Do not pass this statement until the waiting is done
+            Assert.IsTrue(this.resetEvent.WaitOne());
+            mockOperations.VerifyAll();
+        }
+
+        [TestMethod]
+        public void Download_Default_FileDoesNotExistReturnsFalse()
+        {
+            mockOperations.Setup(m => m.GetRawResponse(It.IsAny<HttpResponse>()))
+                          .Returns("{\"status\": \"error\", \"msg\": \"An Error\"}");
+
+            // Setup waiting
+            this.resetEvent = new AutoResetEvent(false);
+
+            httpOperations.Download("test.csv", pollEvery, false, delegate(bool noError, string message)
+            {
+                Assert.IsFalse(noError);
+                Assert.AreEqual(message, "An Error");
+
+                // Stop waiting
+                this.resetEvent.Set();
+            });
+
+            // Do not pass this statement until the waiting is done
+            Assert.IsTrue(this.resetEvent.WaitOne());
+            mockOperations.VerifyAll();
+        }
+
+        [TestMethod]
+        public void Download_Default_FileNotFound()
+        {
+            mockOperations.Setup(m => m.GetRawResponse(It.IsAny<HttpResponse>()))
+                          .Returns("{\"status\": \"active\", \"job\": \"a_job\"}");
+
+            mockOperations.Setup(m => m.WaitAndDownload("a_job", It.IsAny<System.Timers.Timer>(), It.IsAny<Action>()))
+                            .Callback((string name, System.Timers.Timer timer, Action callback) =>
+                            {
+                                mockOperations.Setup(m =>
+                                    m.Download("test.csv", pollEvery, true, It.IsAny<Action<bool, string>>()));
+
+                                Assert.AreEqual(name, "a_job");
+                                Assert.AreEqual(timer.Interval, pollEvery * 1000);
+
+                                callback();
+
+                                mockOperations.Verify(m =>
+                                    m.Download("test.csv", pollEvery, true, It.IsAny<Action<bool, string>>()));
+                            });
+
+            httpOperations.Download("test.csv", pollEvery, true, delegate(bool noError, string message) { });
+
+            mockOperations.VerifyAll();
+        }
+
+        [TestMethod]
+        public void Download_Default_FileFoundError()
+        {
+            var returns = new Queue<string>();
+            returns.Enqueue("{\"status\": \"completed\", \"download_url\": \"a_url\", \"job\": \"a_job\"}");
+            returns.Enqueue("{\"status\": \"error\", \"msg\": \"An Error\"}");
+
+            mockOperations.Setup(m => m.GetRawResponse(It.IsAny<HttpResponse>()))
+                          .Returns(returns.Dequeue);
+
+            // Setup waiting
+            this.resetEvent = new AutoResetEvent(false);
+
+            httpOperations.Download("\test", pollEvery, false, delegate(bool noError, string message)
+            {
+                Assert.IsFalse(noError);
+                Assert.AreEqual(message, "An Error");
+
+                // Stop waiting
+                this.resetEvent.Set();
+            });
+
+            // Do not pass this statement until the waiting is done
+            Assert.IsTrue(this.resetEvent.WaitOne());
+
+            mockOperations.VerifyAll();
+        }
+
+        [TestMethod]
+        public void Download_Default_FileFoundAndDownloads()
+        {
+            var returns = new Queue<string>();
+            returns.Enqueue("{\"status\": \"completed\", \"download_url\": \"a_url\", \"job\": \"a_job\"}");
+            returns.Enqueue("{\"status\": \"other\"}");
+
+            mockOperations.Setup(m => m.GetRawResponse(It.IsAny<HttpResponse>()))
+                          .Returns(returns.Dequeue);
+
+            // Setup waiting
+            this.resetEvent = new AutoResetEvent(false);
+
+            httpOperations.Download("\test", pollEvery, false, delegate(bool noError, string message)
+            {
+                Assert.IsTrue(noError);
+                Assert.AreEqual(message, "a_job.zip downloaded to \test");
+
+                // Stop waiting
+                this.resetEvent.Set();
+            });
+
+            // Do not pass this statement until the waiting is done
+            Assert.IsTrue(this.resetEvent.WaitOne());
+
+            mockOperations.VerifyAll();
+        }
+
+        // WaitsForDownload
+
+        [TestMethod]
+        public void WaitsForDownload_Default_PrintsSleepsAndCreatesTimer()
+        {
+            var time = 2;
+            Mock<System.Timers.Timer> mockTimer = new Mock<System.Timers.Timer>(time * 1000);
+
+            using (StringWriter sw = new StringWriter())
+            {
+                Console.SetOut(sw);
+
+                var callCount = 0;
+                mockOperations.CallBase = true;
+                mockOperations.Object.WaitAndDownload("test.csv", mockTimer.Object, delegate()
+                {
+                    callCount += 1;
+                });
+
+                Assert.AreEqual("Waiting for results file test.csv", sw.ToString().Trim());
+            }
+
+            // Unfortunately, short of defining a new timer interface for the main code base, this is the most I can test.
+            mockTimer.Object.Stop();
+            Assert.AreEqual(mockTimer.Object.AutoReset, false);
+            mockTimer.VerifyAll();
+
+            // Restore the Console
+            StreamWriter standardOut = new StreamWriter(Console.OpenStandardOutput());
+            standardOut.AutoFlush = true;
+            Console.SetOut(standardOut);
         }
     }
 }
