@@ -24,10 +24,6 @@ namespace CSharpFTPExample
         public int pollEvery;
         public string protocol;
         public string notify;
-        public ISession ftp;
-        // There is no way to retrieve server responses from WinSCP when the requests succeeds. So a WebClient hack.
-        // See GetStatusDescription
-        public IWebClient ftpOther;
 
         public FtpOperations ftpOperations;
         public HttpOperations httpOperations;

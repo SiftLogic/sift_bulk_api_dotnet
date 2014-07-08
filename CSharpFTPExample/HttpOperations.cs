@@ -11,6 +11,9 @@ using System.Timers;
 
 namespace CSharpFTPExample
 {
+    /// <summary>
+    /// Handles all HTTP based operations across the system.
+    /// </summary>
     public class HttpOperations
     {
         public string baseUrl;
@@ -25,7 +28,7 @@ namespace CSharpFTPExample
         /// <param name="port">The port to connect to.</param>
         /// <value>A Tuple in the form (<init succeeded>, <message>)</value>
         /// </summary>
-        public virtual Tuple<bool, string> Init(string password, string host, int port = 80)
+        public virtual Tuple<bool, string> Init(string password, string host, int port = 8080)
         {
             http = new WrappedHttpClient();
             http.Request.AddExtraHeader("x-authorization", password);

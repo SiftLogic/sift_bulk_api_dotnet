@@ -15,7 +15,7 @@ namespace CSharpFTPExample
     {
         // Required
         [Option('f', Required = true,
-          HelpText = "The absolute file path of the upload file")]
+          HelpText = "The file path of the upload file")]
         public string File { get; set; }
 
         [Option('l', Required = true,
@@ -64,7 +64,7 @@ namespace CSharpFTPExample
         {
             var usage = new StringBuilder();
             usage.AppendLine("Usage: -f [file name] -l [download location] -p [password]\n");
-            usage.AppendLine("Example: -f ../test.csv -l /tmp -p e261742d-fe2f-4569-95e6-312689d049 --poll 10");
+            usage.AppendLine("Example: -f test.csv -l /tmp -p e261742d-fe2f-4569-95e6-312689d049 --poll 10");
             usage.AppendLine("Upload test.csv, process it and download the results to /tmp, poll every 10s\n");
 
             // Remove the copyright and version lines as they are unnecessary
@@ -77,7 +77,7 @@ namespace CSharpFTPExample
     }
 
     /// <summary>
-    /// Demonstrates how the operations object can be used. It is better to require the operation.js file
+    /// Demonstrates how the operations object can be used. It is better to require the Operation.cs file
     /// your code directly for increased flexibility.
     /// 1. Uploads the specified file in multifile mode (unless otherwise specified).
     /// 2. Polls the server until the results are complete.

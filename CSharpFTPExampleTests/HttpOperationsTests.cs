@@ -66,7 +66,7 @@ namespace CSharpFTPExampleTests
         [TestMethod]
         public void Init_NoPort_SetsApiKeyAndBaseUrl()
         {
-            Assert.AreEqual(httpOperations.baseUrl, "http://bacon:80/api/live/bulk/");
+            Assert.AreEqual(httpOperations.baseUrl, "http://bacon:8080/api/live/bulk/");
         }
 
         // Upload
@@ -81,7 +81,7 @@ namespace CSharpFTPExampleTests
             Assert.AreEqual(httpOperations.Upload("test.csv"), result);
 
             var calls = httpOperations.http.LastCalls;
-            Assert.AreEqual(calls[0][0], "http://bacon:80/api/live/bulk/");
+            Assert.AreEqual(calls[0][0], "http://bacon:8080/api/live/bulk/");
 
             IDictionary<string, object> newData = (IDictionary<string, object>)calls[0][1];
             Assert.AreEqual(newData["export_type"], "multi");

@@ -1,15 +1,16 @@
 .Net Bulk API
 =============
 
-This demonstrates how to connect to the bulk server with .net using C#. Currently, HTTP and FTP are supported for connections. Unlike FTP, HTTP requires no username just the password (auth token). The apikey and password/auth token are found in the UI: API Keys -\> Manage -\> Actions -\> Access Details. Once you have that you can try the executable file for an upload demo. For example:
+This demonstrates how to connect to the bulk server with .Net using C#. Currently, HTTP and FTP are supported for connections. Unlike FTP, HTTP requires no username just the password (auth token). The apikey and password/auth token are found in the UI: API Keys -\> Manage -\> Actions -\> Access Details. Once you have that you can try the executable file for an upload demo. For example, using HTTP:
 <pre>
   <code>
-    CSharpFTPExample\bin\Release\CSharpFTPExample.exe -f C:\full\path\test.csv -l C:\WINDOWS\Temp\ --u aUsername -p e261742d-fe2f-4569-95e6-312689d04903 --poll 10
+    CSharpFTPExample\bin\Release\CSharpFTPExample.exe -f test.csv -l /tmp -p e261742d-fe2f-4569-95e6-312689d049 --poll 10
   </code>
 </pre>
 The CLI is described in more detail with <code>CSharpFTPExample\bin\Release\CSharpFTPExample.exe</code>
 
 It is recommended to include the Operations file and use the methods in there to customize your process. The methods are described in file.
+
 Licensing
 =========
 
@@ -32,7 +33,7 @@ There is no installation step as all necessary files have been included. Althoug
 Building
 ========
 
-Make sure you are running C# \>= <b>5.0</b>.
+Make sure you are running C# \>= <b>5.5</b>.
 
 Using Visual Studio Express 2013 Edition, but newer or slightly older versions of Visual Studio should be able to load the solution file in \CSharpFTPExample fine. The build is already configured you just have to run it (F7). We are using NuGet (built into modern Visual Studios) for package management.
 
