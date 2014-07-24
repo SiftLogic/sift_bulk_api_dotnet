@@ -1,16 +1,15 @@
-.Net FTP API
-============
+.Net Bulk API
+=============
 
-This demonstrates how to connect to the ftp server with .Net using C#. You will need to know your apikey and password which can be found in the UI: API Keys -\> Manage -\> Actions -\> Access Details. Once you have that you can try the executable file for an upload demo. For example:
+This demonstrates how to connect to the bulk server with .Net using C#. Currently, HTTP and FTP are supported for connections. Unlike FTP, HTTP requires no username just the password (auth token). The apikey and password/auth token are found in the UI: API Keys -\> Manage -\> Actions -\> Access Details. Once you have that you can try the executable file for an upload demo. For example, using HTTP:
 <pre>
   <code>
-    CSharpFTPExample\bin\Release\CSharpFTPExample.exe -f C:\full\path\test.csv -l C:\WINDOWS\Temp\ -u aUsername -p e261742d-fe2f-4569-95e6-312689d04903 --poll 10
+    CSharpFTPExample\bin\Release\CSharpFTPExample.exe -f test.csv -l /tmp -p e261742d-fe2f-4569-95e6-312689d049 --poll 10
   </code>
 </pre>
 The CLI is described in more detail with <code>CSharpFTPExample\bin\Release\CSharpFTPExample.exe</code>
 
-It is recommended to include the Operations file and use the methods in there to customize your process. The methods are described in file. If you want to cut down on code, this only requires the 
-[CommandLineParser](https://commandline.codeplex.com/) library.
+It is recommended to include the Operations file and use the methods in there to customize your process. The methods are described in file.
 
 Licensing
 =========
@@ -34,7 +33,7 @@ There is no installation step as all necessary files have been included. Althoug
 Building
 ========
 
-Make sure you are running C# \>= <b>5.0</b>.
+Make sure you are running C# \>= <b>5.5</b>.
 
 Using Visual Studio Express 2013 Edition, but newer or slightly older versions of Visual Studio should be able to load the solution file in \CSharpFTPExample fine. The build is already configured you just have to run it (F7). We are using NuGet (built into modern Visual Studios) for package management.
 
@@ -48,15 +47,18 @@ Files And Folders
  * **CSharpFTPExample.csproj:** The project file used to load FTP example code.
  * **CSharpFTPExample.sln:** The solution file for the entire project including the tests.
  * **Program.cs:** Used to run the program, accepts command line arguments.
- * **IWebClient.cs:** An interface around System.Net.WebClient. Since most mocking libraries including what we are using (Moq) cannot test non virtual methods, interfaces like this must be created around concrete classes.
- * **WrappedWebClient.cs:** The implementation for IWebClient.cs, just calls WebClient's methods without modification.
+ * **Operations.cs:** Object that interfaces with server connection modes.
+ * **FtpOperations.cs:** Object that provides an FTP interface to the server.
+ * **HttpOperations.cs:** Object that provides an HTTP interface to the server.
+ * **I\*.cs:** An custom interface around a class. Since most mocking libraries including what we are using (Moq) cannot test non virtual methods, interfaces like this must be created around concrete classes.
+ * **Wrapped\*.cs:** The implementation for the corresponding I\*.cs.
  * **packages.config:** XML Specification of the libraries this program uses.
 
 * **CSharpFTPExampleTests/:** Visual Studio project folder of the tests for the main code. Important files and folders:
  * **bin/:** Contains the debug and release executables.
  * **Properties/:** Basic information about the project such as copyrights
  * **CSharpFTPExample.csproj:** The project file used to load FTP example test code.
- * **OperationsTests.cs:** Tests for the Operations class
+ * **\*Test.js:** Unit tests of API functionality. It is recommended that you update these if you want to customize connection code.
  * **packages.config:** XML Specification of the libraries this program uses
 
 * **test.csv:** A small sample records file. 

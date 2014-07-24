@@ -6,7 +6,6 @@ using System.Collections.Specialized;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using CSharpFTPExample;
 using System.Net;
-using WinSCP;
 using Moq;
 using Moq.Protected;
 
@@ -17,43 +16,49 @@ namespace CSharpFTPExampleTests
     {
         private Mock<Operations> mockOperations;
         private Operations operations;
+        private Mock<FtpOperations> mockFtpOperations;
+        private Mock<HttpOperations> mockHttpOperations;
         private Mock<IWebClient> mockWebClient;
         private IWebClient client;
-        private Mock<ISession> mockSession;
-        private ISession session;
 
         private string username = "TestKey";
         private string password = "e261742d-fe2f-4569-95e6-312689d04903";
         private string host = "bacon";
         private int port = 9871;
         private int pollEvery = 1;
+        private string protocol = "ftp";
+        private string notify = "test@test.com";
 
-        private string file = @"C:\WINDOWS\Temp\test.csv";
-        private string directory;
-
-        private AutoResetEvent resetEvent;
-
-        [TestInitialize]
-        public void Setup()
+        private void setOperationsWithProtocol(string newProtocol)
         {
-            mockOperations = new Mock<Operations>(username, password, host, port, pollEvery);
+            mockOperations = new Mock<Operations>(username, password, port, host, pollEvery, newProtocol, notify);
             mockOperations.CallBase = true;
             operations = mockOperations.Object;
 
             mockWebClient = new Mock<IWebClient>();
             client = mockWebClient.Object;
 
-            mockSession = new Mock<ISession>();
-            session = mockSession.Object;
-            operations.Init(session);
+            mockFtpOperations = new Mock<FtpOperations>();
+            mockHttpOperations = new Mock<HttpOperations>();
 
-            directory = "ftp://" + host + ':' + port + "/complete";
+            operations.Init();
+
+            operations.ftpOperations = mockFtpOperations.Object;
+            operations.httpOperations = mockHttpOperations.Object;
+        }
+
+        [TestInitialize]
+        public void Setup()
+        {
+            setOperationsWithProtocol(protocol);
         }
 
         [TestMethod]
         public void Instantiation_AllVariables_SetsValues()
         {
             Assert.AreEqual(operations.pollEvery, pollEvery);
+            Assert.AreEqual(operations.protocol, protocol);
+            Assert.AreEqual(operations.notify, notify);
 
             var details = operations.GetConnectionDetails();
             Assert.AreEqual(details["username"], username);
@@ -65,337 +70,112 @@ namespace CSharpFTPExampleTests
         [TestMethod]
         public void Instantiation_DefaultValues_SetsValues()
         {
-            Operations operations = new Operations(username, password);
+            Operations operations = new Operations(username, password, port);
 
             Assert.AreEqual(operations.pollEvery, 300);
+            Assert.AreEqual(operations.protocol, "http");
+            Assert.AreEqual(operations.notify, null);
 
             var details = operations.GetConnectionDetails();
             Assert.AreEqual(details["host"], "localhost");
-            Assert.AreEqual(details["port"], 21);
         }
 
         // Init
 
         [TestMethod]
-        public void Init_Default_LogsInAndConnects()
+        public void Init_Default_CallsFtp()
         {
-            mockSession.Setup(m => m.Open(It.Is<SessionOptions>(
-                o => o.Protocol == Protocol.Ftp &&
-                     o.HostName == host &&
-                     o.UserName == username &&
-                     o.Password == password
-            )));
+            mockFtpOperations.Setup(m => m.Init(It.IsAny<ISession>(), username, password, host, port))
+                             .Returns(new Tuple<bool, string>(true, "A Message."));
 
-            Assert.AreEqual(operations.Init(session), new Tuple<bool, string>(true, "Initialization succeeded."));
-            Assert.AreEqual(operations.ftp, session);
-            mockSession.VerifyAll();
+            Assert.AreEqual(operations.Init(), new Tuple<bool, string>(true, "A Message."));
+
+            mockFtpOperations.VerifyAll();
         }
 
         [TestMethod]
-        public void Init_Default_SetsUpWebClientNoConnect()
+        public void Init_Default_CallsHttp()
         {
-            mockSession.Setup(m => m.Open(It.IsAny<SessionOptions>()));
+            setOperationsWithProtocol("http");
+            mockHttpOperations.Setup(m => m.Init(password, host, port))
+                              .Returns(new Tuple<bool, string>(true, "A Message."));
 
-            operations.Init(session);
+            Assert.AreEqual(operations.Init(), new Tuple<bool, string>(true, "A Message."));
 
-            var credentials = operations.ftpOther.Credentials.GetCredential(null, "");
-            Assert.AreEqual(credentials.Password, password);
-            Assert.AreEqual(credentials.UserName, username);
-
-            mockSession.VerifyAll();
-            Assert.IsTrue(operations.ftpOther is WebClient);
-        }
-
-        [TestMethod]
-        public void Init_Default_SessionCausesError()
-        {
-            mockSession.Setup(m => m.Open(It.IsAny<SessionOptions>()))
-                       .Throws(new IOException("An Error"));
-
-            Assert.AreEqual(operations.Init(session), new Tuple<bool, string>(false, "An Error"));
-            mockSession.VerifyAll();
+            mockHttpOperations.VerifyAll();
         }
 
         // Upload
 
         [TestMethod]
-        public void Upload_BadStatusCode_SplitFileNameIsUploaded()
+        public void Upload_Default_CallsFtp()
         {
-            var ftpMessage = "500 The command was not accepted.";
-            mockWebClient.Setup(m => m.UploadFile(null, null));
-            mockOperations.Setup(m => m.GetStatusDescription(client)).Returns(new Tuple<int, string>(500, ftpMessage));
+            mockFtpOperations.Setup(m => m.Upload("test.csv", false))
+                             .Returns(new Tuple<bool, string>(true, "A Message."));
 
-            operations.Init(session);
-            operations.ftpOther = client;
+            Assert.AreEqual(operations.Upload("test.csv", false), new Tuple<bool, string>(true, "A Message."));
 
-            Assert.AreEqual(operations.Upload(file), new Tuple<bool, string>(false, "Failed to extract filename from: " + ftpMessage));
-            Assert.AreEqual(operations.uploadFileName, null);
+            mockFtpOperations.VerifyAll();
         }
 
         [TestMethod]
-        public void Upload_SplitFile_SplitFileNameIsUploaded()
+        public void Upload_Default_CallsHttp()
         {
-            var ftpMessage = "226 closing data connection; File upload success; source.csv";
-            mockWebClient.Setup(m => m.UploadFile("ftp://bacon:9871/import_TestKey_splitfile_config/test.csv", file));
-            mockOperations.Setup(m => m.GetStatusDescription(client)).Returns(new Tuple<int, string>(226, ftpMessage));
+            setOperationsWithProtocol("http");
+            mockHttpOperations.Setup(m => m.Upload("test.csv", false, null))
+                             .Returns(new Tuple<bool, string>(true, "A Message."));
 
-            operations.Init(session);
-            operations.ftpOther = client;
+            Assert.AreEqual(operations.Upload("test.csv", false), new Tuple<bool, string>(true, "A Message."));
 
-            Assert.AreEqual(operations.Upload(file), new Tuple<bool, string>(true, "test.csv has been uploaded as source.csv"));
-
-            mockWebClient.VerifyAll();
-            mockOperations.VerifyAll();
-            Assert.AreEqual(operations.uploadFileName, "source.csv");
-        }
-
-        [TestMethod]
-        public void Upload_SingleFile_SingleFileNameIsUploaded()
-        {
-            var ftpMessage = "226 closing data connection; File upload success; source.csv";
-            mockWebClient.Setup(m => m.UploadFile("ftp://bacon:9871/import_TestKey_default_config/test.csv", file));
-            mockOperations.Setup(m => m.GetStatusDescription(client)).Returns(new Tuple<int, string>(226, ftpMessage));
-
-            operations.Init(session);
-            operations.ftpOther = client;
-
-            Assert.AreEqual(operations.Upload(file, true), new Tuple<bool, string>(true, "test.csv has been uploaded as source.csv"));
-
-            mockWebClient.VerifyAll();
-            mockOperations.VerifyAll();
-            Assert.AreEqual(operations.uploadFileName, "source.csv");
-        }
-
-        // GetDownloadFileName
-
-        [TestMethod]
-        public void GetDownloadFileName_NoModify_ReturnsSentIn()
-        {
-            var operations = new Operations(username, password);
-
-            Assert.AreEqual(operations.GetDownloadFileName(), operations.uploadFileName);
-
-            operations.uploadFileName = "";
-            Assert.AreEqual(operations.GetDownloadFileName(), "");
-
-            operations.uploadFileName = "test_test.doc";
-            Assert.AreEqual(operations.GetDownloadFileName(), "test_test.doc");
-        }
-
-        [TestMethod]
-        public void GetDownloadFileName_Modify_ReturnsModified()
-        {
-            var operations = new Operations(username, password);
-
-            operations.uploadFileName = "source_test.doc";
-            Assert.AreEqual(operations.GetDownloadFileName(), "archive_test.doc");
-
-            operations.uploadFileName = "source_source_test.csv.csv";
-            Assert.AreEqual(operations.GetDownloadFileName(), "archive_source_test.csv.zip");
-
-            operations.uploadFileName = "source_source_test.txt.txt";
-            Assert.AreEqual(operations.GetDownloadFileName(), "archive_source_test.txt.zip");
-
-            operations.uploadFileName = "source_source_test.csv.txt";
-            Assert.AreEqual(operations.GetDownloadFileName(), "archive_source_test.csv.zip");
+            mockHttpOperations.VerifyAll();
         }
 
         // Download
 
         [TestMethod]
-        public void Download_Default_AnErrorReturnsFalse()
+        public void Download_Default_CallsFtp()
         {
-            mockOperations.Setup(m => m.GetDownloadFileName()).Returns("test.csv");
-            mockOperations.Setup(m => m.RemoteFileExists("/complete/test.csv")).Throws(new Exception("An Error"));
+            mockFtpOperations.Setup(m => m.Download("C:\\TEMP", pollEvery, true, It.IsAny<Action<bool, string>>()));
 
-            // Setup waiting
-            this.resetEvent = new AutoResetEvent(false);
+            operations.Download("C:\\TEMP", true, delegate(bool noError, string message){});
 
-            operations.Download("test.csv", false, delegate(bool noError, string message)
-            {
-                Assert.IsFalse(noError);
-                Assert.AreEqual(message, "An Error");
-
-                // Stop waiting
-                this.resetEvent.Set();
-            });
-
-            // Do not pass this statement until the waiting is done
-            Assert.IsTrue(this.resetEvent.WaitOne());
-            mockOperations.VerifyAll();
+            mockFtpOperations.VerifyAll();
         }
 
         [TestMethod]
-        public void Download_Default_FileExistsErrorReturnsFalse()
+        public void Download_Default_CallsHttp()
         {
-            mockOperations.Setup(m => m.GetDownloadFileName()).Returns("test.csv");
-            mockOperations.Setup(m => m.RemoteFileExists("/complete/test.csv")).Returns(new Tuple<bool, string>(false, "An Error"));
+            setOperationsWithProtocol("http");
+            mockHttpOperations.Setup(m => m.Download("C:\\TEMP", pollEvery, true, It.IsAny<Action<bool, string>>()));
 
-            // Setup waiting
-            this.resetEvent = new AutoResetEvent(false);
+            operations.Download("C:\\TEMP", true, delegate(bool noError, string message) { });
 
-            operations.Download("test.csv", false, delegate(bool noError, string message)
-            {
-                Assert.IsFalse(noError);
-                Assert.AreEqual(message, "An Error");
-
-                // Stop waiting
-                this.resetEvent.Set();
-            });
-
-            // Do not pass this statement until the waiting is done
-            Assert.IsTrue(this.resetEvent.WaitOne());
-            mockOperations.VerifyAll();
-        }
-
-        [TestMethod]
-        public void Download_Default_FileNotFound()
-        {
-            mockOperations.Setup(m => m.GetDownloadFileName()).Returns("test.csv");
-            mockOperations.Setup(m => m.RemoteFileExists("/complete/test.csv")).Returns(new Tuple<bool, string>(false, null));
-            mockOperations.Setup(m => m.WaitAndDownload("test.csv", It.IsAny<System.Timers.Timer>(), It.IsAny<Action>()))
-                            .Callback((string name, System.Timers.Timer timer, Action callback) =>
-                            {
-                                mockOperations.Setup(m => m.Download("test.csv", true, It.IsAny<Action<bool, string>>()));
-
-                                Assert.AreEqual(name, "test.csv");
-                                Assert.AreEqual(timer.Interval, pollEvery * 1000);
-
-                                callback();
-
-                                mockOperations.Verify(m => m.Download("test.csv", true, It.IsAny<Action<bool, string>>()));
-                            });
-
-            operations.Download("test.csv", true, delegate(bool noError, string message) { });
-
-            mockOperations.VerifyAll();
-        }
-
-        [TestMethod]
-        public void Download_Default_FileFoundAndDownloads()
-        {
-            mockOperations.Setup(m => m.GetDownloadFileName()).Returns("test.csv");
-            mockOperations.Setup(m => m.RemoteFileExists("/complete/test.csv")).Returns(new Tuple<bool, string>(true, null));
-            mockOperations.Setup(m => m.ThrowErrorIfLocalFileNotPresent("\test\\test.csv"));
-            mockSession.Setup(m => m.GetFiles("/complete/test.csv", "\test\\test.csv", false));
-
-            // Setup waiting
-            this.resetEvent = new AutoResetEvent(false);
-
-            operations.Download("\test", false, delegate(bool noError, string message)
-            {
-                //Assert.IsTrue(noError);
-                Assert.AreEqual(message, "test.csv downloaded to \test");
-
-                // Stop waiting
-                this.resetEvent.Set();
-            });
-
-            // Do not pass this statement until the waiting is done
-            Assert.IsTrue(this.resetEvent.WaitOne());
-
-            mockOperations.VerifyAll();
-        }
-
-        // RemoteFileExists
-
-        [TestMethod]
-        public void RemoteFileExists_EmptyFile_ReturnsFalse()
-        {
-            Assert.AreEqual(operations.RemoteFileExists(""), new Tuple<bool, string>(false, null));
-        }
-
-        [TestMethod]
-        public void RemoteFileExists_InitError_ReturnsFalseAndError()
-        {
-            mockSession.Setup(m => m.Dispose());
-            mockOperations.Setup(m => m.Init(It.IsAny<ISession>())).Returns(new Tuple<bool, string>(false, "An Error"));
-
-            Assert.AreEqual(operations.RemoteFileExists("test/test.csv"), new Tuple<bool, string>(false, "An Error"));
-
-            mockSession.VerifyAll();
-            mockOperations.VerifyAll();
-        }
-
-        [TestMethod]
-        public void FileExists_FileNotFound_ReturnsFalse()
-        {
-            mockSession.Setup(m => m.Dispose());
-            mockOperations.Setup(m => m.Init(It.IsAny<ISession>())).Returns(new Tuple<bool, string>(true, null));
-            mockOperations.Setup(m => m.InDirectoryListing("/test", "test.csv")).Returns(false);
-            operations.Init(session);
-
-            Assert.AreEqual(operations.RemoteFileExists("/test/test.csv"), new Tuple<bool, string>(false, null));
-
-            mockSession.VerifyAll();
-            mockOperations.VerifyAll();
-        }
-
-        [TestMethod]
-        public void FileExists_FileFound_ReturnTrue()
-        {
-            mockSession.Setup(m => m.Dispose());
-            mockOperations.Setup(m => m.Init(It.IsAny<ISession>())).Returns(new Tuple<bool, string>(true, null));
-            mockOperations.Setup(m => m.InDirectoryListing("/test", "test.csv")).Returns(true);
-            operations.Init(session);
-
-            Assert.AreEqual(operations.RemoteFileExists("/test/test.csv"), new Tuple<bool, string>(true, null));
-
-            mockSession.VerifyAll();
-            mockOperations.VerifyAll();
-        }
-
-        // WaitsForDownload
-
-        [TestMethod]
-        public void WaitsForDownload_Default_PrintsSleepsAndCreatesTimer()
-        {
-            var time = 2;
-            Mock<System.Timers.Timer> mockTimer = new Mock<System.Timers.Timer>(time * 1000);
-
-            using (StringWriter sw = new StringWriter())
-            {
-                Console.SetOut(sw);
-
-                var callCount = 0;
-                mockOperations.CallBase = true;
-                operations.WaitAndDownload("test.csv", mockTimer.Object, delegate()
-                {
-                    callCount += 1;
-                });
-
-                Assert.AreEqual("Waiting for results file test.csv", sw.ToString().Trim());
-            }
-
-            // Unfortunately, short of defining a new timer interface for the main code base, this is the most I can test.
-            mockTimer.Object.Stop();
-            Assert.AreEqual(mockTimer.Object.AutoReset, false);
-            mockTimer.VerifyAll();
-
-            // Restore the Console
-            StreamWriter standardOut = new StreamWriter(Console.OpenStandardOutput());
-            standardOut.AutoFlush = true;
-            Console.SetOut(standardOut);
+            mockHttpOperations.VerifyAll();
         }
 
         // Remove
 
         [TestMethod]
-        public void Remove_Default_WithErrorReturnsFalse()
+        public void Remove_Default_CallsFtp()
         {
-            mockOperations.Setup(m => m.GetDownloadFileName()).Returns("test.zip");
-            mockSession.Setup(m => m.RemoveFiles("/complete/test.zip")).Throws(new Exception("An Error"));
+            mockFtpOperations.Setup(m => m.Remove())
+                             .Returns(new Tuple<bool, string>(true, "A Message."));
 
-            Assert.AreEqual(operations.Remove(), new Tuple<bool, string>(false, "An Error"));
+            Assert.AreEqual(operations.Remove(), new Tuple<bool, string>(true, "A Message."));
+
+            mockFtpOperations.VerifyAll();
         }
 
         [TestMethod]
-        public void Remove_Default_DeletedReturnsTrue()
+        public void Remove_Default_CallsHttp()
         {
-            mockOperations.Setup(m => m.GetDownloadFileName()).Returns("test.zip");
-            mockSession.Setup(m => m.RemoveFiles("/complete/test.zip"));
+            setOperationsWithProtocol("http");
+            mockHttpOperations.Setup(m => m.Remove())
+                              .Returns(new Tuple<bool, string>(true, "A Message."));
 
-            Assert.AreEqual(operations.Remove(), new Tuple<bool, string>(true, null));
+            Assert.AreEqual(operations.Remove(), new Tuple<bool, string>(true, "A Message."));
+
+            mockHttpOperations.VerifyAll();
         }
     }
 }

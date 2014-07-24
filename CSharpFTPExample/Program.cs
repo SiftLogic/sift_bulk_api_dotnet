@@ -15,14 +15,14 @@ namespace CSharpFTPExample
     {
         // Required
         [Option('f', Required = true,
-          HelpText = "The absolute file path of the upload file")]
+          HelpText = "The file path of the upload file")]
         public string File { get; set; }
 
         [Option('l', Required = true,
           HelpText = "The absolute location of where the results file should be placed")]
         public string Location { get; set; }
 
-        [Option('u', Required = true,
+        [Option('u', DefaultValue = null, // (Optional)
           HelpText = "The username defined in the manage api keys section")]
         public string Key { get; set; }
 
@@ -51,12 +51,20 @@ namespace CSharpFTPExample
           HelpText = "Remove the corresponding results file of the uploaded file")]
         public bool Remove { get; set; }
 
+        [Option("protocol", DefaultValue = "http",
+          HelpText = "Which type of protocol to use")]
+        public string Protocol { get; set; }
+
+        [Option("notify", DefaultValue = null,
+          HelpText = "The full email address to notify")]
+        public string Notify { get; set; }
+
         [HelpOption]
         public string GetUsage()
         {
             var usage = new StringBuilder();
-            usage.AppendLine("Usage: -f [file name] -l [download location] -k [username] -p [password]\n");
-            usage.AppendLine("Example: -f ../test.csv -l /tmp -u aUsername -p e261742d-fe2f-4569-95e6-312689d049 --poll 10");
+            usage.AppendLine("Usage: -f [file name] -l [download location] -p [password]\n");
+            usage.AppendLine("Example: -f test.csv -l /tmp -p e261742d-fe2f-4569-95e6-312689d049 --poll 10");
             usage.AppendLine("Upload test.csv, process it and download the results to /tmp, poll every 10s\n");
 
             // Remove the copyright and version lines as they are unnecessary
@@ -69,7 +77,7 @@ namespace CSharpFTPExample
     }
 
     /// <summary>
-    /// Demonstrates how the operations object can be used. It is better to require the operation.js file
+    /// Demonstrates how the operations object can be used. It is better to require the Operation.cs file
     /// your code directly for increased flexibility.
     /// 1. Uploads the specified file in multifile mode (unless otherwise specified).
     /// 2. Polls the server until the results are complete.
@@ -82,14 +90,15 @@ namespace CSharpFTPExample
             var opts = new Options();
             if (CommandLine.Parser.Default.ParseArguments(args, opts))
             {
-                Operations operations = new Operations(opts.Key, opts.Password, opts.Host, opts.Port, opts.Poll);
-                var result = operations.Init(new WrappedSession());
+                Operations operations = new Operations(opts.Key, opts.Password, opts.Port, opts.Host, opts.Poll,
+                                                       opts.Protocol, opts.Notify);
+                var result = operations.Init();
                 if (!result.Item1)
                 {
                     throw new Exception(result.Item2);
                 }
 
-                result = operations.Upload(opts.File, opts.SingleFile);
+                result = operations.Upload(opts.File, opts.SingleFile, opts.Notify);
                 if (!result.Item1)
                 {
                     throw new Exception(result.Item2);
@@ -102,8 +111,6 @@ namespace CSharpFTPExample
                     {
                         throw new Exception(message);
                     }
-                    
-                    
                     Console.WriteLine(message);
 
                     if (opts.Remove)
